@@ -5,7 +5,7 @@ import arcpy, csv
 # csv_file contains the parameters for the CreateFeatureClass method. 
 # The column headers should match the parameters from the AddField method. 
 # https://pro.arcgis.com/en/pro-app/tool-reference/data-management/add-field.htm
-csv_file = r"..sample_data\data_for_make_feature_table.csv"
+csv_file = r"..\sample_data\data_for_make_feature_table.csv"
 
 # The path to the geodatabase where the feature class will be created
 # If SDE, this should include the connection file path as well as the name of the database
@@ -33,7 +33,6 @@ def CreateParametersForAddField(parameterNames, parameterValues):
     return parametersList
 
 def main ():
-
     # set overwrite to true
     arcpy.env.overwriteOutput = True
 
