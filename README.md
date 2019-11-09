@@ -17,7 +17,6 @@ This script creates a standalone table based on a csv file. The csv file contain
 This script creates relationship classes based on a csv file. The csv file contains information about the tables that take part in the relationship, relationship type, keys, etc. 
 
 *** 
-<br>
 
 <img src="https://dymaptic.com/images/dymaptic-logo-new.png" alt="dymaptic" width="200"/>
 
