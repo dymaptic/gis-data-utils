@@ -1,0 +1,2 @@
+﻿origin_table,destination_table,out_relationship_class,relationship_type,forward_label,backward_label,message_direction,cardinality,attributed,origin_primary_key,origin_foreign_key,destination_primary_key,destination_foreign_key
+TREES,INSPECTIONS,TREES_INSPECTIONS,COMPOSITE,INSPEACTIONS,TREES,NONE,ONE_TO_MANY,NONE,TREE_ID,TREE_ID,,
