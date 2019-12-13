@@ -6,11 +6,11 @@ Set of scripts to help with managing a geodatabase. These scripts are especially
 
 ### make_feature_table_from_csv.py
 
-This script creates a feature class based on a csv file. The csv file contains information about the fields to be added to the feature class. 
+This script creates a feature class based on a csv file. The csv file contains information about the fields to be added to the feature class. See batch processes if you need to create multiple feature classes at the same time.
 
 ### make_standalone_table_from_csv.py
 
-This script creates a standalone table based on a csv file. The csv file contains information about the fields to be added to the standalone table. 
+This script creates a standalone table based on a csv file. The csv file contains information about the fields to be added to the standalone table. See batch processing if you need to create multiple standalone tables at the same time
 
 ### create_relationship_classes_from_csv.py
 
