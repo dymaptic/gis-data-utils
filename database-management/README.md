@@ -112,3 +112,28 @@ csvs_folder = os.path.join(os.getcwd(), r"database-management\sample_data\batch\
 geodatabase = r"<geodatabase connection file or file geodatabase>"
 ```
 
+## Creating relationships
+
+Relationship creation is only available in batch mode using the `create_relationship_classes_from_csv.py script`. The csv file contains all the parameters for the command as headers. See the `sample_data` folder for an example csv file to use with the script. 
+
+origin_table | destination_table | out_relationship_class | relationship_type | forward_label | backward_label | message_direction | cardinality | attributed | origin_primary_key | origin_foreign_key | destination_primary_key | destination_foreign_key
+--- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+TREES | INSPECTIONS | TREES_INSPECTIONS | COMPOSITE | INSPEACTIONS | TREES | NONE | ONE_TO_MANY | NONE | TREE_ID | TREE_ID |  |   
+
+
+
+Modify the script with your path to the csv file and connection file
+
+```python
+
+# Define parameters for the script
+
+# csv_file contains the values for the CreateRelationshipClass method. 
+# The column headers should match the parameters from the CreateRelationshipClass method. 
+# https://pro.arcgis.com/en/pro-app/tool-reference/data-management/create-relationship-class.htm
+csv_file = r"..\sample_data\data_for_create_relationships.csv"
+
+# The path to the geodatabase where the relationship class will be created
+# If SDE, this should include the connection file path as well as the name of the database
+geodatabase = r"<geodatabase connection file or file geodatabase>"
+```
