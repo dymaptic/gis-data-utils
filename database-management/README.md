@@ -114,7 +114,7 @@ geodatabase = r"<geodatabase connection file or file geodatabase>"
 
 ## Creating relationships
 
-Relationship creation is only available in batch mode using the `create_relationship_classes_from_csv.py script`. The csv file contains all the parameters for the command as headers. See the `sample_data` folder for an example csv file to use with the script. 
+Relationship creation is only available in batch mode using the `create_relationship_classes_from_csv.py` script. The csv file contains all the parameters for the command as headers. See the `sample_data` folder for an example csv file to use with the script. 
 
 origin_table | destination_table | out_relationship_class | relationship_type | forward_label | backward_label | message_direction | cardinality | attributed | origin_primary_key | origin_foreign_key | destination_primary_key | destination_foreign_key
 --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
