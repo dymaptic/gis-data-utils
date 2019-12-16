@@ -10,8 +10,7 @@ csvs_folder = os.path.join(os.getcwd(), r"database-management\sample_data\batch\
 
 # The path to the geodatabase where the table will be created
 # If SDE, this should include the connection file path as well as the name of the database
-#geodatabase = r"<geodatabase connection file or file geodatabase>"
-geodatabase = r"C:\Users\MaraStoica\Documents\ArcGIS\Default.gdb"
+geodatabase = r"<geodatabase connection file or file geodatabase>"
 
 def CreateParametersForAddField(parameterNames, parameterValues):
     parametersList = {}
@@ -37,7 +36,7 @@ def main():
             # create standalone table
             standalone_table_name = file.replace(".csv", "")
 
-            print ("Creating standalone table" + standalone_table_name + " in " + geodatabase )
+            print ("Creating standalone table " + standalone_table_name + " in " + geodatabase )
             arcpy.CreateTable_management(geodatabase, standalone_table_name)
 
             print ("Completed creating standalone table")

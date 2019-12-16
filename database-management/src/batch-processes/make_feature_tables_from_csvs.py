@@ -8,10 +8,9 @@ from os import listdir
 # https://pro.arcgis.com/en/pro-app/tool-reference/data-management/add-field.htm
 csvs_folder = os.path.join(os.getcwd(), r"database-management\sample_data\batch\make_feature_tables")
 
-# The path to the geodatabase where the feature class will be created
+# The path to the geodatabase where the feature classes will be created
 # If SDE, this should include the connection file path as well as the name of the database
-#geodatabase = r"<geodatabase connection file or file geodatabase>"
-geodatabase = r"C:\Users\MaraStoica\Documents\ArcGIS\Default.gdb"
+geodatabase = r"<geodatabase connection file or file geodatabase>"
 
 def CreateParametersForAddField(parameterNames, parameterValues):
     parametersList = {}
