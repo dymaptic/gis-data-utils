@@ -10,7 +10,8 @@ csvs_folder = os.path.join(os.getcwd(), r"database-management\sample_data\batch\
 
 # The path to the geodatabase where the feature class will be created
 # If SDE, this should include the connection file path as well as the name of the database
-geodatabase = r"<geodatabase connection file or file geodatabase>"
+#geodatabase = r"<geodatabase connection file or file geodatabase>"
+geodatabase = r"C:\Users\MaraStoica\Documents\ArcGIS\Default.gdb"
 
 def CreateParametersForAddField(parameterNames, parameterValues):
     parametersList = {}
@@ -30,7 +31,7 @@ def GetParamsForFeatureClassFromCsvName(csv_file_name):
         # split file name on # to get parameters for CreateFeatureclass from file name
         fc_params = file_name.split("#")
         if len(fc_params) == 3:
-            if fc_params[1] in ["POINT", "MULTIPATCH", "MULTIPOINT", "POLYGON", "POLYLINE"]:
+            if fc_params[1] in ["POINT", "MULTIPATCH", "MULTIPOINT", "POLYGON", "POLYLINE"] and IntFromString(fc_params[2] is not None):
                 return fc_params
     return None
 
