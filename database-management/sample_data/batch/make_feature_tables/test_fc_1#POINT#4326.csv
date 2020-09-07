@@ -1,0 +1,8 @@
+﻿field_name,field_type,field_length,field_alias
+ProjectID,LONG,,Project ID
+ProjectName,TEXT,100,Project Name
+PlantName,TEXT,100,Plant Name
+Capacity,TEXT,50,Capacity
+CompletionDate,TEXT,20,Estim. Startup
+InvestmentInMillions,LONG,,$ MM capital
+IsLinked,SHORT,,
