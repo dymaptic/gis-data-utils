@@ -1,20 +1,15 @@
 # Dymaptic GIS Data Utilities
-The GIS Data Utilities created by dymaptic is a set of evolving scripts that facilitate managing GIS data. The list below represents the folder break-down and a brief description of each script. To view a more detailed description and usage cases, navigate to the individual folders. 
+The GIS Data Utilities created by dymaptic is a set of evolving scripts that facilitate managing GIS data. The list below represents the folder break-down and a brief description of the scripts contained within. To view a more detailed description and usage cases, navigate to the individual folders. 
 
-## database-management
-Set of scripts to help with managing a geodatabase. These scripts are especially useful during the initial phases of development when the database schema can change.
+## [database-management](database-management/README.md)
 
-### make_feature_table_from_csv.py
+Set of scripts to help with managing a geodatabase. These scripts are especially useful during the initial phases of development when the database schema can change. Tasks you can accomplish with these scripts:
+- create a feature class from a csv file that contains attribute information
+- create a standalone table from a csv file that contains attribute information
+- batch create multiple feature classes from a folder of csv files containing attribute information
+- batch create multiple standalone tables from a folder of csv files containing attribute information
+- batch create relationship classes based on a csv file that contains information about the tables that take part in the relationship, relationship type, keys, etc. 
 
-This script creates a feature class based on a csv file. The csv file contains information about the fields to be added to the feature class. 
-
-### make_standalone_table_from_csv.py
-
-This script creates a standalone table based on a csv file. The csv file contains information about the fields to be added to the standalone table. 
-
-### create_relationship_classes_from_csv.py
-
-This script creates relationship classes based on a csv file. The csv file contains information about the tables that take part in the relationship, relationship type, keys, etc. 
 
 *** 
 
