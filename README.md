@@ -14,7 +14,7 @@ Set of scripts to help with managing a geodatabase. These scripts are especially
 
 *** 
 
-<img src="![dymaptic-logo](https://user-images.githubusercontent.com/20545379/92405646-0b4d4d00-f104-11ea-85fd-8fe40cb65c7f.png)" alt="dymaptic" height="200"/>
+<img src="https://user-images.githubusercontent.com/20545379/92405646-0b4d4d00-f104-11ea-85fd-8fe40cb65c7f.png" alt="dymaptic" height="50"/></br>
 
 
 **dymaptic** (di-map-tick) www.dymaptic.com is a boutique software development firm with 25+ years  of combined expertise spanning many industries and platforms.
