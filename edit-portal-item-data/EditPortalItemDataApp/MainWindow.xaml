@@ -1,0 +1,103 @@
+﻿<Window x:Class="EditPortalItemDataApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
+        xmlns:local="clr-namespace:EditPortalItemDataApp"
+        mc:Ignorable="d"
+        Title="Edit ArcGIS Portal Item Data" Height="700" Width="1000">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="35" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="Item ID:"
+                   Grid.Row="0"
+                   Grid.Column="0"
+                   Margin="5" VerticalAlignment="Center" />
+        <TextBox x:Name="ItemIdBox"
+                 Grid.Row="0"
+                 Grid.Column="1"
+                 Margin="0,5,5,5"
+                 HorizontalAlignment="Stretch"
+                 VerticalContentAlignment="Center"/>
+        <TextBlock Text="Portal URL:"
+                   Grid.Row="0"
+                   Grid.Column="2"
+                   Margin="0,5,5,5"
+                   VerticalAlignment="Center" />
+        <TextBox x:Name="PortalUrlBox"
+                 Grid.Row="0"
+                 Grid.Column="3"
+                 Grid.ColumnSpan="2"
+                 Margin="0,5,5,5"
+                 HorizontalAlignment="Stretch"
+                 VerticalContentAlignment="Center" />
+        <TextBlock Text="User Name:"
+                   Grid.Row="1"
+                   Grid.Column="0"
+                   Margin="5,0,5,5"
+                   VerticalAlignment="Center" />
+        <TextBox x:Name="UserNameBox"
+                 Grid.Row="1"
+                 Grid.Column="1"
+                 Margin="0,0,5,5"
+                 HorizontalAlignment="Stretch"
+                 VerticalContentAlignment="Center" />
+        <TextBlock Text="Password:"
+                   Grid.Row="1"
+                   Grid.Column="2"
+                   Margin="0,0,5,5"
+                   VerticalAlignment="Center" />
+        <PasswordBox x:Name="PasswordBox"
+                     Grid.Row="1"
+                     Grid.Column="3"
+                     Margin="0,0,5,5"
+                     HorizontalAlignment="Stretch"
+                 VerticalContentAlignment="Center" />
+        <Button x:Name="GetItemDataButton"
+                Grid.Row="1"
+                Grid.Column="4"
+                Content="Get Item Data"
+                Padding="6,3"
+                Margin="0,0,5,5" 
+                Click="GetItemDataButton_Click" />
+        <avalon:TextEditor x:Name="ItemDataBox"
+                           Grid.Row="2"
+                           Grid.ColumnSpan="5"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Stretch"
+                           ScrollViewer.VerticalScrollBarVisibility="Auto"
+                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                           SyntaxHighlighting="JavaScript"
+                           FontFamily="Consolas"
+                           FontSize="15"
+                           BorderBrush="DarkGray"
+                           BorderThickness="0.5"
+                           Margin="5,0,5,5" />
+        <TextBlock x:Name="StatusText"
+                   Grid.Row="3"
+                   Grid.Column="0"
+                   Grid.ColumnSpan="4"
+                   Margin="5,0,5,5"
+                   Foreground="#FF595757"
+                   VerticalAlignment="Center" />
+        <Button x:Name="UpdateDataButton"
+                Grid.Row="3"
+                Grid.Column="4"
+                Content="Update Item Data"
+                Padding="6,3"
+                Margin="0,0,5,5"
+                Click="UpdateDataButton_Click" />
+    </Grid>
+</Window>
