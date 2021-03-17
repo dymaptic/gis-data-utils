@@ -9,15 +9,15 @@ from email.message import EmailMessage
 
 ########### User entered variables
 
-# Name of feature class in gdb
+# Name of feature class in gdb or sde
 dataName = "RangeVegetationImprovement"
-# Name of shapefile
+# File name of shapefile that is downloaded
 shapefileName = 'Range_Vegetation_Improvement__Feature_Layer_'
 # URL of the download
 downloadURL = 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
  # Save location
 saveFolder = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever'
-# GDB or SDE workspace
+# GDB or SDE workspace - include path to where the data will be stored
 arcGISWorkspace = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever\Map\Map.gdb'
 # List of email recipeients
 toEmails = ['heidi@dymaptic.com']
