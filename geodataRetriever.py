@@ -41,8 +41,6 @@ logFilePath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'geod
 for file in os.listdir(saveFolder):
     if file.endswith(".shp"):
         shapefile = os.path.join(saveFolder, file)
-print(shapefile)
-# sys.exit()
 
 def SendEmail(subject, message, TO = toEmails, FROM = fromEmail, password = fromEmailPassword, server = server):
     try:
