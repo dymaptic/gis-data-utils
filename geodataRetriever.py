@@ -118,7 +118,7 @@ except Exception:
     sys.exit()
 
 # Load data into Workspace
-print('loading data from ' + shapefileName)
+print('loading data from ' + shapefile)
 try:
     with arcpy.da.SearchCursor(shapefile, fields) as sCursor:
         with arcpy.da.InsertCursor(dataName, fields) as inCursor:
