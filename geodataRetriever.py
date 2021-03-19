@@ -81,9 +81,6 @@ def UpdateFeatureClass(shapefile, fcName):
         if f != 'FID' and f != 'OBJECTID':
             fields.append(f)
 
-    print(fields)
-    print(fcFields)
-
     # Check that all fields in shapefile are in target feature class
     if not set(fields).issubset(set(fcFields)):
         logging.error("Fields in shapefile do not match fields in target feature class " + fcName)
@@ -129,9 +126,16 @@ if len(dataNames) != len(downloadURLs):
 
 # Get shapefile names
 shapefiles = []
+allfiles = []
 for file in os.listdir(saveFolder):
-    if file.endswith(".shp"):
-        shapefiles.append( os.path.join(saveFolder, file))
+    allfiles.append(os.path.join(saveFolder, file))
+
+for f in allfiles:
+    if f.endswith('.shp'):
+        shapefiles.append(f)
+
+# sort by date
+shapefiles.sort(key=os.path.getctime)
 
 # Check for permissions to save directory
 try:
