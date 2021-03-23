@@ -13,27 +13,29 @@ import re
 
 ########### User entered variables
 
-# Names of each feature class in gdb or sde to put data into - Keep these in the same order as downloadURLS
-dataNames = ['RangeVegetationImprovement', 'FireOccurrenceLocations1984', 'OpiodCSV']
-# URL of the download
-downloadURLs = ['https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip', 'https://opendata.arcgis.com/datasets/c57777877aa041ecaef98ff2519aabf6_60.zip', 'https://opendata.arcgis.com/datasets/e16768f13d084bb688120e6ddfbaa113_0.csv']
- # Save location
-saveFolder = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever'
+# Dictionary containing the feature class name from the GDB/SDE as key and download url as value
+data = {
+    'FeatureClassName': 'DownloadUrl',
+    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
+}
+# Save location
+saveFolder = r'C:\Temp'
 # GDB or SDE workspace - include path to where the data will be stored
-arcGISWorkspace = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever\Map\Map.gdb'
+arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
 # List of email recipeients
-toEmails = ['heidi@dymaptic.com']
+toEmails = ['email1@sample.com', 'email2@sample.com']
 # Sender email
-fromEmail = 'heidi@dymaptic.com'
+fromEmail = 'email@sample.com'
 # Password to sender email
-fromEmailPassword = 'mqkfpwjwsfqdkftx'
+fromEmailPassword = ''
 # Email server
 server = 'smtp.office365.com'
 
 ###########
 
-def DownloadAndUnzip(url, saveLocation):
-    # Download shapefile and save
+
+# Download and unzip file
+def DownloadAndUnzip(url, saveLocation, name):
     print("downloading data...")
     try:
         gcontext = ssl.SSLContext()
@@ -41,20 +43,24 @@ def DownloadAndUnzip(url, saveLocation):
         with open(saveLocation, 'wb') as f:
             f.write(data)
     except Exception:
+        print("ERROR: Download failed")
         logging.exception('Download Failed')
         SendEmail('Geodata Retriever failed', 'Data failed to download. ' + url + '\nSee log at ' + logFilePath + '\n'  + traceback.format_exc())
-        sys.exit()
+        return False
 
     if saveLocation.endswith('.zip'):
         print("unzipping...")
         try:
             with zipfile.ZipFile(saveLocation, 'r') as f:
-                f.extractall(saveFolder)
+                f.extractall(os.path.join(saveFolder, name))
         except Exception:
+            print("ERROR: Unzip failed")
             logging.exception("Unzip failed")
             SendEmail('Geodata Retriever failed', 'Unzip failed.\nSee log at ' + logFilePath + '\n' + traceback.format_exc())
-            sys.exit()
+            return False
+    return True
 
+# Send email
 def SendEmail(subject, message, TO = toEmails, FROM = fromEmail, password = fromEmailPassword, server = server):
     try:
         msg = EmailMessage()
@@ -71,8 +77,9 @@ def SendEmail(subject, message, TO = toEmails, FROM = fromEmail, password = from
     except Exception:
         logging.exception("Could not send email")
 
+# Update data in ArcGIS Workspace
 def UpdateFeatureClass(file, fcName):
-    print("Updating data from " + file + " and " + fcName)
+    print("Updating feature class or table...")
 
     # if CSV, get fields
     if file.endswith('.csv'):
@@ -85,15 +92,16 @@ def UpdateFeatureClass(file, fcName):
         fields = []
         for f in cols:
             if f != 'FID' and f != 'OBJECTID':
-                f = re.sub(r'\W+', '_', f)
+                f = re.sub(r'\W+', '_', f)  # replace non-alphanumeric characters with underscore
                 fields.append(f) 
 
         # Check that all fields in csv are in target table
         fcFields = [f.name for f in arcpy.ListFields(fcName) if f.type != 'OID' and f.type != 'Geometry']
         if not set(fields).issubset(set(fcFields)):
+            print("ERROR: Fields in CSV do not match fields in target table")
             logging.error("Fields in CSV do not match fields in target table " + fcName)
             SendEmail('Geodata Retriever failed', "Fields in downloaded CSV do not match fields in target table" + fcName + "\nSee log at " + logFilePath)
-            sys.exit()
+            return
 
     # if SHP, get fields
     if file.endswith('.shp'):
@@ -109,79 +117,70 @@ def UpdateFeatureClass(file, fcName):
 
         # Check that all fields in shapefile are in target feature class
         if not set(fields).issubset(set(fcFields)):
+            print("ERROR: Fields in shapefile do not match fields in target feature class")
             logging.error("Fields in shapefile do not match fields in target feature class " + fcName)
             SendEmail('Geodata Retriever failed', "Fields in download do not match fields in target feature class" + fcName + "\nSee log at " + logFilePath)
-            sys.exit()
+            return
 
         # Add geometry field
         fields.append('SHAPE@')
 
     # Delete existing data from table if necessary
-    print("deleting rows from " + fcName)
+    print("deleting rows... ")
     try:
         arcpy.DeleteRows_management(fcName)
     except Exception:    
+        print("ERROR: Delete rows failed")
         logging.exception("Delete rows failed for " + fcName)
         SendEmail('Geodata Retriever failed', 'Delete rows failed for ' + fcName + '.\nSee log at ' + logFilePath + '\n' + traceback.format_exc())
-        sys.exit()
+        return
 
     # Load data into Workspace
-    print('loading data from ' + file)
+    print('loading data...')
     try:
         with arcpy.da.SearchCursor(file, fields) as sCursor:
             with arcpy.da.InsertCursor(fcName, fields) as inCursor:
                 for row in sCursor:
                     inCursor.insertRow(row)
     except Exception:    
+        print("ERROR: Insert rows failed")
         logging.exception("Insert rows failed for " + fcName)
         SendEmail('Geodata Retriever failed', 'Insert data failed for ' + fcName + '.\nSee log at ' + logFilePath + '\n' + traceback.format_exc())
-        sys.exit()
+        return
 
 # Set up 
 arcpy.env.workspace = arcGISWorkspace
 logging.basicConfig(filename='geodataRetriever.log', level=logging.ERROR)
 logFilePath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'geodataRetriever.log')
 
-# Check that dataNames and downloadURLs have equal lengths
-if len(dataNames) != len(downloadURLs):
-    logging.error("dataNames and DownloadURLs lists must be the same length.")
-    SendEmail('Geodata Retriever failed', 'dataNames and DownloadURLs lists must be the same length.\nSee log at ' + logFilePath)
-    sys.exit()
-
 # Check for permissions to save directory
 try:
     os.access(saveFolder, os.W_OK)
 except Exception:
-    logging.exception("Permission denied")
+    print("ERROR: Permission denied to save folder")
+    logging.exception("Permission denied to " + saveFolder)
     SendEmail('Geodata Retriever failed', 'Permission denied to ' + saveFolder + '\nSee log at ' + logFilePath + '\n' + traceback.format_exc())
     sys.exit()
 
-# Download and unzip all data
-count = 0
-for url in downloadURLs:
-    if url.endswith('.zip'):
-        saveLocation = os.path.join(saveFolder,'data.zip')
-    elif url.endswith('.csv'):
-        saveLocation = os.path.join(saveFolder, dataNames[count] + '.csv')
-    DownloadAndUnzip(url, saveLocation)
-    count += 1
-
-# Get shapefile names
-shapefiles = []
-allfiles = []
-for file in os.listdir(saveFolder):
-    allfiles.append(os.path.join(saveFolder, file))
-
-for f in allfiles:
-    if f.endswith('.shp') or f.endswith('.csv'):
-        shapefiles.append(f)
-
-# sort by date
-shapefiles.sort(key=os.path.getctime)
-
-# For each shapefile downloaded, update feature class
-count = 0
-for s in shapefiles:
-    UpdateFeatureClass(s, dataNames[count])
-    count += 1
-
+# For each data item, download data and udpate feature class or table
+for d in data:
+    print('Updating ' + d)
+    # download data
+    if data.get(d).endswith('.zip'):
+        saveLocation = os.path.join(saveFolder, d + '.zip')
+    elif data.get(d).endswith('.csv'):
+        saveLocation = os.path.join(saveFolder, d + '.csv')
+    else:
+        saveLocation = os.path.join(saveFolder, d)
+    success = DownloadAndUnzip(data.get(d), saveLocation, d)
+    if success: 
+        # get shp file names
+        # NOTE: this will not work if multiple shapefiles are downloaded in the same zip
+        if saveLocation.endswith('.zip'):
+            files = []
+            for file in os.listdir(os.path.join(saveFolder, d)):
+                if file.endswith('.shp'):
+                    files.append(os.path.join(saveFolder, d, file))
+            saveLocation = files.pop()
+        # update feature class
+        UpdateFeatureClass(saveLocation, d)
