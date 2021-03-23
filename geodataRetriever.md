@@ -6,8 +6,7 @@ The Geodata Retriever is designed to download GIS data from the web and update t
 
 This script can be customized to use with your specific data by entering a few fields.
 
-* `dataName`: The name of the feature class to replace in your GDB or SDE.
-* `downloadURL`: The url to the data to download.
+* `data`: A dictionary with the key as the name of the feature class to replace in your GDB or SDE. Value is the url to the data to download.
 * `saveFolder`: Path to the directory to donwload data into.
 * `arcGIS Workspace`: Path to the GDB or SDE workspace. Inlcude the path to where the data in `dataName` is stored if there are internal folders.
 * `toEmails`: List of emails to send error messages to if the script fails.
