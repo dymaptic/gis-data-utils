@@ -106,10 +106,11 @@ def UpdateFeatureClass(file, fcName):
             cols = next(reader)
 
         # Remove FID, OBJECTID
+        cols = [f for f in cols if len(f) != 0] # remove empty headers
         fields = []
         for f in cols:
-            if f != 'FID' and f != 'OBJECTID':
-                f = re.sub(r'\W+', '_', f)  # replace non-alphanumeric characters with underscore
+            if f != 'FID' and f != 'OBJECTID' and not f[0].isdigit():
+                f = re.sub('[^0-9a-zA-Z]+', '_', f)  # replace non-alphanumeric characters with underscore
                 fields.append(f) 
 
         # Check that all fields in csv are in target table
@@ -188,7 +189,7 @@ for d in data:
     # download data
     if data.get(d).endswith('.zip'):
         saveLocation = os.path.join(saveFolder, d + '.zip')
-    elif data.get(d).endswith('.csv'):
+    elif 'csv' in  data.get(d):
         saveLocation = os.path.join(saveFolder, d + '.csv')
     else:
         saveLocation = os.path.join(saveFolder, d)
@@ -201,6 +202,10 @@ for d in data:
             for file in os.listdir(os.path.join(saveFolder, d)):
                 if file.endswith('.shp'):
                     files.append(os.path.join(saveFolder, d, file))
+            if len(files) > 1:
+                print("Cannot handle zip folder with multiple shapefiles.")
+                logging.error("Cannot handle zip folder with multiple shapefiles.")
+                SendEmail('Geodata Retriever failed', 'Cannot handle zip folder with multiple shapefiles.')
             saveLocation = files.pop()
         # update feature class
         UpdateFeatureClass(saveLocation, d)
