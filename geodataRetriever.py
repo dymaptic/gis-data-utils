@@ -14,25 +14,42 @@ import re
 ########### User entered variables
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
+# Dictionary containing the feature class name from the GDB/SDE as key and download url as value
 data = {
-    'FeatureClassName': 'DownloadUrl',
-    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
+    # 'TestBadDownload': 'blah',
+    # 'OpiodCSV': 'https://opendata.arcgis.com/datasets/e16768f13d084bb688120e6ddfbaa113_0.csv',
+    # 'LandUseCodesCSV': 'https://opendata.arcgis.com/datasets/0299df5232df4f7c9c6b647b3e3703ee_0.csv',
+    # 'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip', 
+    'FireOccurrenceLocations1984': 'https://opendata.arcgis.com/datasets/c57777877aa041ecaef98ff2519aabf6_60.zip'
 }
 # Save location
-saveFolder = r'C:\Temp'
+saveFolder = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever'
 # GDB or SDE workspace - include path to where the data will be stored
-arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
+arcGISWorkspace = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever\Map\Map.gdb'
 # List of email recipeients
-toEmails = ['email1@sample.com', 'email2@sample.com']
+toEmails = ['heidi@dymaptic.com']
 # Sender email
-fromEmail = 'email@sample.com'
+fromEmail = 'heidi@dymaptic.com'
 # Password to sender email
-fromEmailPassword = ''
+fromEmailPassword = 'mqkfpwjwsfqdkftx'
 # Email server
 server = 'smtp.office365.com'
 
 ###########
 
+# Backup data
+def Backup(fc):
+    backupFolder = os.path.join(saveFolder, 'Backup.gdb')
+    # create backup GDB if it doesn't exist
+    if not os.access(backupFolder, os.W_OK):
+        backup = arcpy.CreateFileGDB_management(saveFolder, 'Backup')
+    # copy data into it
+    fcdesc = arcpy.Describe(fc)
+    backupFC = os.path.join(backupFolder, fcdesc.basename)
+    arcpy.CopyFeatures_management(fc, backupFC)
+    # try to run update
+    # if update fails restore backup data then delete GDB
+    # if update successful delete backup and GDB
 
 # Download and unzip file
 def DownloadAndUnzip(url, saveLocation, name):
@@ -124,6 +141,9 @@ def UpdateFeatureClass(file, fcName):
 
         # Add geometry field
         fields.append('SHAPE@')
+
+    # Backup data
+    Backup(fcName)
 
     # Delete existing data from table if necessary
     print("deleting rows... ")
