@@ -13,6 +13,11 @@ Set of scripts to help with managing a geodatabase. These scripts are especially
 
 *** 
 
+## [geodata-retriever](geodata-retriever/README.md)
+Downloads GIS data from the web and update the data you have in your database.  This will allow you to automate the process of keeping data up to date.
+
+*** 
+
 <img src="https://dymaptic.com/images/dymaptic-logo-new.png" alt="dymaptic" width="200"/>
 
 
