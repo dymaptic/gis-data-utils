@@ -14,32 +14,29 @@ import re
 ########### User entered variables
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
-# Dictionary containing the feature class name from the GDB/SDE as key and download url as value
 data = {
-    # 'TestBadDownload': 'blah',
-    # 'OpiodCSV': 'https://opendata.arcgis.com/datasets/e16768f13d084bb688120e6ddfbaa113_0.csv',
-    # 'LandUseCodesCSV': 'https://opendata.arcgis.com/datasets/0299df5232df4f7c9c6b647b3e3703ee_0.csv',
-    # 'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip', 
-    'FireOccurrenceLocations1984': 'https://opendata.arcgis.com/datasets/c57777877aa041ecaef98ff2519aabf6_60.zip'
+    'FeatureClassName': 'DownloadUrl',
+    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
 }
 # Save location
-saveFolder = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever'
+saveFolder = r'C:\Temp'
 # GDB or SDE workspace - include path to where the data will be stored
-arcGISWorkspace = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever\Map\Map.gdb'
+arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
 # List of email recipeients
-toEmails = ['heidi@dymaptic.com']
+toEmails = ['email1@sample.com', 'email2@sample.com']
 # Sender email
-fromEmail = 'heidi@dymaptic.com'
+fromEmail = 'email@sample.com'
 # Password to sender email
-fromEmailPassword = 'mqkfpwjwsfqdkftx'
+fromEmailPassword = ''
 # Email server
 server = 'smtp.office365.com'
 
 ###########
 
+
 # Backup data
-def Backup(fc):
-    backupFolder = os.path.join(saveFolder, 'Backup.gdb')
+def Backup(backupFolder, fc):
+    print('backing up data...')
     # create backup GDB if it doesn't exist
     if not os.access(backupFolder, os.W_OK):
         backup = arcpy.CreateFileGDB_management(saveFolder, 'Backup')
@@ -47,9 +44,20 @@ def Backup(fc):
     fcdesc = arcpy.Describe(fc)
     backupFC = os.path.join(backupFolder, fcdesc.basename)
     arcpy.CopyFeatures_management(fc, backupFC)
-    # try to run update
-    # if update fails restore backup data then delete GDB
-    # if update successful delete backup and GDB
+
+# Restore data from backup
+def Restore(backupFolder, fc):
+    print('restoring data...')
+    fcdesc = arcpy.Describe(fc)
+    backupFC = os.path.join(backupFolder, fcdesc.basename)
+    fcPath = os.path.join(fcdesc.path, fc)
+    arcpy.Delete_management(fc) # delete fc
+    arcpy.CopyFeatures_management(backupFC, fcPath)  # copy backup of fc
+
+# Delete backup GDB
+def DeleteBackup(backupFolder):
+    if os.path.exists(backupFolder):
+        arcpy.Delete_management(backupFolder)
 
 # Download and unzip file
 def DownloadAndUnzip(url, saveLocation, name):
@@ -144,7 +152,7 @@ def UpdateFeatureClass(file, fcName):
         fields.append('SHAPE@')
 
     # Backup data
-    Backup(fcName)
+    Backup(backupFolder, fcName)
 
     # Delete existing data from table if necessary
     print("deleting rows... ")
@@ -159,6 +167,7 @@ def UpdateFeatureClass(file, fcName):
     # Load data into Workspace
     print('loading data...')
     try:
+        raise Exception("testing backup")
         with arcpy.da.SearchCursor(file, fields) as sCursor:
             with arcpy.da.InsertCursor(fcName, fields) as inCursor:
                 for row in sCursor:
@@ -167,12 +176,14 @@ def UpdateFeatureClass(file, fcName):
         print("ERROR: Insert rows failed")
         logging.exception("Insert rows failed for " + fcName)
         SendEmail('Geodata Retriever failed', 'Insert data failed for ' + fcName + '.\nSee log at ' + logFilePath + '\n' + traceback.format_exc())
+        Restore(backupFolder, fcName)
         return
 
 # Set up 
 arcpy.env.workspace = arcGISWorkspace
 logging.basicConfig(filename='geodataRetriever.log', level=logging.ERROR)
 logFilePath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'geodataRetriever.log')
+backupFolder = os.path.join(saveFolder, 'Backup.gdb')
 
 # Check for permissions to save directory
 try:
@@ -206,7 +217,11 @@ for d in data:
                 print("Cannot handle zip folder with multiple shapefiles.")
                 logging.error("Cannot handle zip folder with multiple shapefiles.")
                 SendEmail('Geodata Retriever failed', 'Cannot handle zip folder with multiple shapefiles.')
+                DeleteBackup(backupFolder)
                 sys.exit()
             saveLocation = files.pop()
         # update feature class
         UpdateFeatureClass(saveLocation, d)
+
+# Delete backups
+DeleteBackup(backupFolder)
