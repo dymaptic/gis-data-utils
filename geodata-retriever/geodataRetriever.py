@@ -167,7 +167,6 @@ def UpdateFeatureClass(file, fcName):
     # Load data into Workspace
     print('loading data...')
     try:
-        raise Exception("testing backup")
         with arcpy.da.SearchCursor(file, fields) as sCursor:
             with arcpy.da.InsertCursor(fcName, fields) as inCursor:
                 for row in sCursor:
