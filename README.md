@@ -6,6 +6,7 @@ The GIS Data Utilities created by dymaptic is a set of evolving scripts that fac
 Set of scripts to help with managing a geodatabase. These scripts are especially useful during the initial phases of development when the database schema can change. Tasks you can accomplish with these scripts:
 - create a feature class from a csv file that contains attribute information
 - create a standalone table from a csv file that contains attribute information
+- add fields to an existing feature class
 - batch create multiple feature classes from a folder of csv files containing attribute information
 - batch create multiple standalone tables from a folder of csv files containing attribute information
 - batch create relationship classes based on a csv file that contains information about the tables that take part in the relationship, relationship type, keys, etc. 
@@ -13,7 +14,13 @@ Set of scripts to help with managing a geodatabase. These scripts are especially
 
 *** 
 
+## [geodata-retriever](geodata-retriever/README.md)
+Downloads GIS data from the web and update the data you have in your database.  This will allow you to automate the process of keeping data up to date.
+
+*** 
+
 <img src="https://dymaptic.com/images/dymaptic-logo-new.png" alt="dymaptic" width="200"/>
+
 
 
 **dymaptic** (di-map-tick) www.dymaptic.com is a boutique software development firm with 25+ years  of combined expertise spanning many industries and platforms.
