@@ -185,6 +185,7 @@ for d in data:
                 print("Cannot handle zip folder with multiple shapefiles.")
                 logging.error("Cannot handle zip folder with multiple shapefiles.")
                 SendEmail('Geodata Retriever failed', 'Cannot handle zip folder with multiple shapefiles.')
+                sys.exit()
             saveLocation = files.pop()
         # update feature class
         UpdateFeatureClass(saveLocation, d)
