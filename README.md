@@ -14,7 +14,13 @@ Set of scripts to help with managing a geodatabase. These scripts are especially
 
 *** 
 
-<img src="https://user-images.githubusercontent.com/20545379/92405646-0b4d4d00-f104-11ea-85fd-8fe40cb65c7f.png" alt="dymaptic" height="50"/></br>
+## [geodata-retriever](geodata-retriever/README.md)
+Downloads GIS data from the web and update the data you have in your database.  This will allow you to automate the process of keeping data up to date.
+
+*** 
+
+<img src="https://dymaptic.com/images/dymaptic-logo-new.png" alt="dymaptic" width="200"/>
+
 
 
 **dymaptic** (di-map-tick) www.dymaptic.com is a boutique software development firm with 25+ years  of combined expertise spanning many industries and platforms.
