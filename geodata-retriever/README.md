@@ -1,24 +1,46 @@
 # Geodata Retriever ##
 
-The Geodata Retriever is designed to download GIS data from the web and update the data you have in your database.  This will allow you to automate the process of keeping data up to date.
+The Geodata Retriever is a tool built to download up to date geodata and replace that data in your GDB or SDE.  It works by downloading the latest version of your data, deleting the data currently in your feature class or table, and replacing it with the new data.  This tool can be scheduled to run as often as you'd like so your data is always up to date.
 
-## Customize Script ##
+This tool works with shapefiles and CSV files.  It deletes the existing data in your feature class or table and replaces it with the downloaded data.  The tool also creates a backup of your data and replaces it if updating the data fails. The backup is deleted when the tool finishes.
 
-This script can be customized to use with your specific data by entering a few fields.
+If you run into any issues with this tool, create an issue in GitHub or email us at [info@dymaptic.com](mailto:info@dymaptic.com).
+
+## Requirements ##
+
+ArcGIS Pro or ArcGIS Server must be installed on your machine with a valid license in order to have Python3 and ArcPy available.
+
+## Customize ##
+
+To use this tool, download [geodataRetriever.py](https://github.com/dymaptic/gis-data-utils/blob/7b60d8f03b35c432b96a3a8c1b4373f5e07ee230/geodata-retriever/geodataRetriever.py) and open it in a text editor. Eenter values in the user entered variable section at the top of the tool.
 
 * `data`: A dictionary with the key as the name of the feature class to replace in your GDB or SDE. Value is the url to the data to download.
-* `saveFolder`: Path to the directory to donwload data into.
-* `arcGIS Workspace`: Path to the GDB or SDE workspace. Inlcude the path to where the data in `dataName` is stored if there are internal folders.
-* `toEmails`: List of emails to send error messages to if the script fails.
-* `fromEmail`: Sender email.
-* `fromEmailPassword`: Password to sender email.
-* `server`: Email server to send from.
+
+        ```
+        data = {
+            'key':'value',
+            'FeatureClassName':'Url to download shapefile',
+            'TableName':'Url to download CSV file'
+        }
+        ```
+* `saveFolder`: Path to the directory to donwload data into. Example: `r'C:\Temp'`.  The `r` before the quotes is needed to enter a file path.
+* `arcGIS Workspace`: Path to the GDB or SDE workspace. Inlcude the path to where the data in `dataName` is stored if there are internal folders. Example: `r'C:\Temp\Map\Map.gdb'` or `r'C:\Temp\Map\Map.sde\FolderName'`
+* `toEmails`: A list of emails to send error messages to if the script fails. Example: `['email@gmail.com']` or `['email@gmail.com', 'email2@yahoo.com']`
+* `fromEmail`: Sender email. Example: `'myEmail@gmail.com'`
+* `fromEmailPassword`: Password to fromEmail. Example: `'password'`
+* `server`: Email server to send from.  For example, to send emails from a gmail account use '`'smtp.gmail.com'`.  To send from outlook use `'smtp.office365.com'`.
 
 ## Logging/Error Messages ##
-The script includes error logging which will be saved to geodataRetriever.log in the folder where the script is run.  Emails will also be sent to the listed recipients if the script fails.
+The tool includes error logging which will be saved to `geodataRetriever.log` in the folder where the script is run.  Emails will also be sent to the listed recipients if the tool fails.
+
+## Run Tool ##
+
+You may want to run the tool to make sure everything works correctly before scheduling it to run automatically. To do so, open a Command Prompt.  To start the Python3 environment, enter `"%PROGRAMFILES%\ArcGIS\Pro\bin\Python\Scripts\proenv"` and hit enter. Next you enter `python C:\Path to tool\geodataRetriever.py` and hit enter to run the program.  This will begin the tool.
+
+Additional information about running a Python script using ArcGIS Pro can be found [here](https://pro.arcgis.com/en/pro-app/latest/arcpy/get-started/installing-python-for-arcgis-pro.htm).
 
 ## Scheduling ##
-To schedule the script, open Task Scheduler.  From the Action menu, choose Create Task. Give the task a name and optionally a description.
+To schedule the tool, open Task Scheduler.  From the Action menu, choose Create Task. Give the task a name and optionally a description.
 
 ![image](https://user-images.githubusercontent.com/13741019/111682298-cd835c80-87e9-11eb-81ca-772f0de47c82.png)
 
