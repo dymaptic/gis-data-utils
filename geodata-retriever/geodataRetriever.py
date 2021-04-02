@@ -11,27 +11,51 @@ import traceback
 import csv
 import re
 
+
 ########### User entered variables
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
 data = {
-    'FeatureClassName': 'DownloadUrl',
-    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
+    'ZoningLookup': 'https://opendata.arcgis.com/datasets/6c147f9c80bc49488f40c89736e4c159_267.csv?outSR=%7B%22wkid%22%3A102100%2C%22latestWkid%22%3A3857%7D',
+    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip', 
+    'FireOccurrenceLocations1984': 'https://opendata.arcgis.com/datasets/c57777877aa041ecaef98ff2519aabf6_60.zip'
 }
 # Save location
-saveFolder = r'C:\Temp'
+saveFolder = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever'
 # GDB or SDE workspace - include path to where the data will be stored
-arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
+arcGISWorkspace = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever\Map\Map.gdb'
 # List of email recipeients
-toEmails = ['email1@sample.com', 'email2@sample.com']
+toEmails = ['heidi@dymaptic.com']
 # Sender email
-fromEmail = 'email@sample.com'
+fromEmail = 'heidi@dymaptic.com'
 # Password to sender email
-fromEmailPassword = ''
+fromEmailPassword = 'mqkfpwjwsfqdkftx'
 # Email server
 server = 'smtp.office365.com'
 
 ###########
+
+# ########### User entered variables
+
+# # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
+# data = {
+#     'FeatureClassName': 'DownloadUrl',
+#     'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
+# }
+# # Save location
+# saveFolder = r'C:\Temp'
+# # GDB or SDE workspace - include path to where the data will be stored
+# arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
+# # List of email recipeients
+# toEmails = ['email1@sample.com', 'email2@sample.com']
+# # Sender email
+# fromEmail = 'email@sample.com'
+# # Password to sender email
+# fromEmailPassword = ''
+# # Email server
+# server = 'smtp.office365.com'
+
+# ###########
 
 
 # Backup data
@@ -40,10 +64,12 @@ def Backup(backupFolder, fc):
     # create backup GDB if it doesn't exist
     if not os.access(backupFolder, os.W_OK):
         backup = arcpy.CreateFileGDB_management(saveFolder, 'Backup')
-    # copy data into it
+    # copy data into it - replace existing data
     fcdesc = arcpy.Describe(fc)
     backupFC = os.path.join(backupFolder, fcdesc.basename)
-    arcpy.CopyFeatures_management(fc, backupFC)
+    if arcpy.Exists(backupFC):
+        arcpy.Delete_management(backupFC)
+    arcpy.Copy_management(fc, backupFC)
 
 # Restore data from backup
 def Restore(backupFolder, fc):
@@ -52,12 +78,7 @@ def Restore(backupFolder, fc):
     backupFC = os.path.join(backupFolder, fcdesc.basename)
     fcPath = os.path.join(fcdesc.path, fc)
     arcpy.Delete_management(fc) # delete fc
-    arcpy.CopyFeatures_management(backupFC, fcPath)  # copy backup of fc
-
-# Delete backup GDB
-def DeleteBackup(backupFolder):
-    if os.path.exists(backupFolder):
-        arcpy.Delete_management(backupFolder)
+    arcpy.Copy_management(backupFC, fcPath)  # copy backup of fc
 
 # Download and unzip file
 def DownloadAndUnzip(url, saveLocation, name):
@@ -216,11 +237,7 @@ for d in data:
                 print("Cannot handle zip folder with multiple shapefiles.")
                 logging.error("Cannot handle zip folder with multiple shapefiles.")
                 SendEmail('Geodata Retriever failed', 'Cannot handle zip folder with multiple shapefiles.')
-                DeleteBackup(backupFolder)
                 sys.exit()
             saveLocation = files.pop()
         # update feature class
         UpdateFeatureClass(saveLocation, d)
-
-# Delete backups
-DeleteBackup(backupFolder)
