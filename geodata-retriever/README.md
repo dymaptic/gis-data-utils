@@ -10,6 +10,10 @@ If you run into any issues with this tool, create an issue in GitHub or email us
 
 ArcGIS Pro or ArcGIS Server must be installed on your machine with a valid license in order to have Python3 and ArcPy available.
 
+The tables and feature classes you want to update cannot be opened at the time you run this tool.  If any of the data sources are open the script will exit.
+
+When choosing data to download make sure that only one shapefile is downloaded at a time or the tool will fail.
+
 ## Customize ##
 
 To use this tool, download [geodataRetriever.py](https://github.com/dymaptic/gis-data-utils/blob/7b60d8f03b35c432b96a3a8c1b4373f5e07ee230/geodata-retriever/geodataRetriever.py) and open it in a text editor. Eenter values in the user entered variable section at the top of the tool.
@@ -31,6 +35,7 @@ To use this tool, download [geodataRetriever.py](https://github.com/dymaptic/gis
 * `server`: Email server to send from.  For example, to send emails from a gmail account use '`'smtp.gmail.com'`.  To send from outlook use `'smtp.office365.com'`.
 
 ## Logging/Error Messages ##
+
 The tool includes error logging which will be saved to `geodataRetriever.log` in the folder where the script is run.  Emails will also be sent to the listed recipients if the tool fails.
 
 ## Run Tool ##
