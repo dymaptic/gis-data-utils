@@ -11,6 +11,7 @@ import traceback
 import csv
 import re
 
+
 ########### User entered variables
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
@@ -40,10 +41,12 @@ def Backup(backupFolder, fc):
     # create backup GDB if it doesn't exist
     if not os.access(backupFolder, os.W_OK):
         backup = arcpy.CreateFileGDB_management(saveFolder, 'Backup')
-    # copy data into it
+    # copy data into it - replace existing data
     fcdesc = arcpy.Describe(fc)
     backupFC = os.path.join(backupFolder, fcdesc.basename)
-    arcpy.CopyFeatures_management(fc, backupFC)
+    if arcpy.Exists(backupFC):
+        arcpy.Delete_management(backupFC)
+    arcpy.Copy_management(fc, backupFC)
 
 # Restore data from backup
 def Restore(backupFolder, fc):
@@ -52,12 +55,7 @@ def Restore(backupFolder, fc):
     backupFC = os.path.join(backupFolder, fcdesc.basename)
     fcPath = os.path.join(fcdesc.path, fc)
     arcpy.Delete_management(fc) # delete fc
-    arcpy.CopyFeatures_management(backupFC, fcPath)  # copy backup of fc
-
-# Delete backup GDB
-def DeleteBackup(backupFolder):
-    if os.path.exists(backupFolder):
-        arcpy.Delete_management(backupFolder)
+    arcpy.Copy_management(backupFC, fcPath)  # copy backup of fc
 
 # Download and unzip file
 def DownloadAndUnzip(url, saveLocation, name):
@@ -216,11 +214,7 @@ for d in data:
                 print("Cannot handle zip folder with multiple shapefiles.")
                 logging.error("Cannot handle zip folder with multiple shapefiles.")
                 SendEmail('Geodata Retriever failed', 'Cannot handle zip folder with multiple shapefiles.')
-                DeleteBackup(backupFolder)
                 sys.exit()
             saveLocation = files.pop()
         # update feature class
         UpdateFeatureClass(saveLocation, d)
-
-# Delete backups
-DeleteBackup(backupFolder)
