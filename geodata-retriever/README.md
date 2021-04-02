@@ -10,9 +10,11 @@ If you run into any issues with this tool, create an issue in GitHub or email us
 
 ArcGIS Pro or ArcGIS Server must be installed on your machine with a valid license in order to have Python3 and ArcPy available.
 
+When choosing data to download make sure that only one shapefile is downloaded at a time or the tool will fail.
+
 ## Customize ##
 
-To use this tool, download [geodataRetriever.py](https://github.com/dymaptic/gis-data-utils/blob/7b60d8f03b35c432b96a3a8c1b4373f5e07ee230/geodata-retriever/geodataRetriever.py) and open it in a text editor. Eenter values in the user entered variable section at the top of the tool.
+To use this tool, download [geodataRetriever.py](https://github.com/dymaptic/gis-data-utils/blob/7b60d8f03b35c432b96a3a8c1b4373f5e07ee230/geodata-retriever/geodataRetriever.py) and open it in a text editor. Enter values in the user entered variable section at the top of the tool.
 
 * `data`: A dictionary with the key as the name of the feature class to replace in your GDB or SDE. Value is the url to the data to download.
 
