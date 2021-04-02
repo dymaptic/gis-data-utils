@@ -16,46 +16,23 @@ import re
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
 data = {
-    'ZoningLookup': 'https://opendata.arcgis.com/datasets/6c147f9c80bc49488f40c89736e4c159_267.csv?outSR=%7B%22wkid%22%3A102100%2C%22latestWkid%22%3A3857%7D',
-    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip', 
-    'FireOccurrenceLocations1984': 'https://opendata.arcgis.com/datasets/c57777877aa041ecaef98ff2519aabf6_60.zip'
+    'FeatureClassName': 'DownloadUrl',
+    'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
 }
 # Save location
-saveFolder = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever'
+saveFolder = r'C:\Temp'
 # GDB or SDE workspace - include path to where the data will be stored
-arcGISWorkspace = r'C:\Users\HeidiBinder-Vitti\Desktop\GeodataRetriever\Map\Map.gdb'
+arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
 # List of email recipeients
-toEmails = ['heidi@dymaptic.com']
+toEmails = ['email1@sample.com', 'email2@sample.com']
 # Sender email
-fromEmail = 'heidi@dymaptic.com'
+fromEmail = 'email@sample.com'
 # Password to sender email
-fromEmailPassword = 'mqkfpwjwsfqdkftx'
+fromEmailPassword = ''
 # Email server
 server = 'smtp.office365.com'
 
 ###########
-
-# ########### User entered variables
-
-# # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
-# data = {
-#     'FeatureClassName': 'DownloadUrl',
-#     'RangeVegetationImprovement': 'https://opendata.arcgis.com/datasets/0272be1853cc4bbf86b76df6581abeba_7.zip'
-# }
-# # Save location
-# saveFolder = r'C:\Temp'
-# # GDB or SDE workspace - include path to where the data will be stored
-# arcGISWorkspace = r'C:\Temp\Map\Map.gdb'
-# # List of email recipeients
-# toEmails = ['email1@sample.com', 'email2@sample.com']
-# # Sender email
-# fromEmail = 'email@sample.com'
-# # Password to sender email
-# fromEmailPassword = ''
-# # Email server
-# server = 'smtp.office365.com'
-
-# ###########
 
 
 # Backup data
