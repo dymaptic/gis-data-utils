@@ -11,6 +11,7 @@ import traceback
 import csv
 import re
 
+
 ########### User entered variables
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
@@ -32,6 +33,29 @@ fromEmailPassword = ''
 server = 'smtp.office365.com'
 
 ###########
+
+
+# Backup data
+def Backup(backupFolder, fc):
+    print('backing up data...')
+    # create backup GDB if it doesn't exist
+    if not os.access(backupFolder, os.W_OK):
+        backup = arcpy.CreateFileGDB_management(saveFolder, 'Backup')
+    # copy data into it - replace existing data
+    fcdesc = arcpy.Describe(fc)
+    backupFC = os.path.join(backupFolder, fcdesc.basename)
+    if arcpy.Exists(backupFC):
+        arcpy.Delete_management(backupFC)
+    arcpy.Copy_management(fc, backupFC)
+
+# Restore data from backup
+def Restore(backupFolder, fc):
+    print('restoring data...')
+    fcdesc = arcpy.Describe(fc)
+    backupFC = os.path.join(backupFolder, fcdesc.basename)
+    fcPath = os.path.join(fcdesc.path, fc)
+    arcpy.Delete_management(fc) # delete fc
+    arcpy.Copy_management(backupFC, fcPath)  # copy backup of fc
 
 # Download and unzip file
 def DownloadAndUnzip(url, saveLocation, name):
@@ -125,6 +149,9 @@ def UpdateFeatureClass(file, fcName):
         # Add geometry field
         fields.append('SHAPE@')
 
+    # Backup data
+    Backup(backupFolder, fcName)
+
     # Delete existing data from table if necessary
     print("deleting rows... ")
     try:
@@ -146,12 +173,14 @@ def UpdateFeatureClass(file, fcName):
         print("ERROR: Insert rows failed")
         logging.exception("Insert rows failed for " + fcName)
         SendEmail('Geodata Retriever failed', 'Insert data failed for ' + fcName + '.\nSee log at ' + logFilePath + '\n' + traceback.format_exc())
+        Restore(backupFolder, fcName)
         return
 
 # Set up 
 arcpy.env.workspace = arcGISWorkspace
 logging.basicConfig(filename='geodataRetriever.log', level=logging.ERROR)
 logFilePath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'geodataRetriever.log')
+backupFolder = os.path.join(saveFolder, 'Backup.gdb')
 
 # Check for permissions to save directory
 try:
