@@ -19,7 +19,7 @@ Downloads GIS data from the web and update the data you have in your database.  
 
 *** 
 
-<img src="https://dymaptic.com/images/dymaptic-logo-new.png" alt="dymaptic" width="200"/>
+<img src="https://user-images.githubusercontent.com/20545379/116154002-c172a080-a6ad-11eb-9658-dfc95e6fb0c4.png" alt="dymaptic" width="200"/>
 
 
 
