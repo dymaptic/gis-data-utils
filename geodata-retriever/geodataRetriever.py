@@ -11,7 +11,6 @@ import traceback
 import csv
 import re
 
-
 ########### User entered variables
 
 # Dictionary containing the feature class name from the GDB/SDE as key and download url as value
@@ -40,13 +39,22 @@ def Backup(backupFolder, fc):
     print('backing up data...')
     # create backup GDB if it doesn't exist
     if not os.access(backupFolder, os.W_OK):
-        backup = arcpy.CreateFileGDB_management(saveFolder, 'Backup')
-    # copy data into it - replace existing data
+        arcpy.CreateFileGDB_management(saveFolder, 'Backup')
     fcdesc = arcpy.Describe(fc)
     backupFC = os.path.join(backupFolder, fcdesc.basename)
+
+    # if file not locked - make copy
     if arcpy.Exists(backupFC):
-        arcpy.Delete_management(backupFC)
+        if arcpy.TestSchemaLock(backupFC):
+            arcpy.Delete_management(backupFC)
+        # if file locked - exit program
+        else:
+            print('ERROR: ' + backupFC + ' locked. Exiting program')
+            logging.error('ERROR: ' + backupFC + ' locked. Exiting program')
+            SendEmail('GeodataRetriever failed', 'ERROR: ' + backupFC + ' locked. Exiting program')
+            sys.exit()
     arcpy.Copy_management(fc, backupFC)
+
 
 # Restore data from backup
 def Restore(backupFolder, fc):
@@ -103,6 +111,13 @@ def SendEmail(subject, message, TO = toEmails, FROM = fromEmail, password = from
 # Update data in ArcGIS Workspace
 def UpdateFeatureClass(file, fcName):
     print("Updating feature class or table...")
+
+    # Check for file lock
+    if not arcpy.TestSchemaLock(fcName):
+        print('ERROR: ' + fcName + ' locked. Exiting program')
+        logging.error('ERROR: ' + fcName + ' locked. Exiting program')
+        SendEmail('GeodataRetriever failed', 'ERROR: ' + fcName + ' locked. Exiting program')
+        sys.exit()
 
     # if CSV, get fields
     if file.endswith('.csv'):
@@ -178,8 +193,8 @@ def UpdateFeatureClass(file, fcName):
 
 # Set up 
 arcpy.env.workspace = arcGISWorkspace
-logging.basicConfig(filename='geodataRetriever.log', level=logging.ERROR)
 logFilePath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'geodataRetriever.log')
+logging.basicConfig(filename=logFilePath, level=logging.ERROR)
 backupFolder = os.path.join(saveFolder, 'Backup.gdb')
 
 # Check for permissions to save directory
