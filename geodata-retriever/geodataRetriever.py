@@ -42,17 +42,19 @@ def Backup(backupFolder, fc):
         arcpy.CreateFileGDB_management(saveFolder, 'Backup')
     fcdesc = arcpy.Describe(fc)
     backupFC = os.path.join(backupFolder, fcdesc.basename)
+
     # if file not locked - make copy
-    if arcpy.TestSchemaLock(backupFC):
-        if arcpy.Exists(backupFC):
+    if arcpy.Exists(backupFC):
+        if arcpy.TestSchemaLock(backupFC):
             arcpy.Delete_management(backupFC)
-        arcpy.Copy_management(fc, backupFC)
-    # if file locked - exit program
-    else:
-        print('ERROR: ' + backupFC + ' locked. Exiting program')
-        logging.error('ERROR: ' + backupFC + ' locked. Exiting program')
-        SendEmail('GeodataRetriever failed', 'ERROR: ' + backupFC + ' locked. Exiting program')
-        sys.exit()
+        # if file locked - exit program
+        else:
+            print('ERROR: ' + backupFC + ' locked. Exiting program')
+            logging.error('ERROR: ' + backupFC + ' locked. Exiting program')
+            SendEmail('GeodataRetriever failed', 'ERROR: ' + backupFC + ' locked. Exiting program')
+            sys.exit()
+    arcpy.Copy_management(fc, backupFC)
+
 
 # Restore data from backup
 def Restore(backupFolder, fc):
@@ -191,8 +193,8 @@ def UpdateFeatureClass(file, fcName):
 
 # Set up 
 arcpy.env.workspace = arcGISWorkspace
-logging.basicConfig(filename='geodataRetriever.log', level=logging.ERROR)
 logFilePath = os.path.join(os.path.dirname(os.path.realpath(sys.argv[0])), 'geodataRetriever.log')
+logging.basicConfig(filename=logFilePath, level=logging.ERROR)
 backupFolder = os.path.join(saveFolder, 'Backup.gdb')
 
 # Check for permissions to save directory
