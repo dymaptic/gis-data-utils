@@ -1,6 +1,10 @@
+#python 3.x
+#created by dymaptic as an example on how to interact
+#between MS Teams and ArcGIS Monitor.
+
 import requests
 import pymsteams
-import keyring
+import keyring #the keyring module is used to store the user password into the windows credential manager #https://pypi.org/project/keyring/
 import json
 
 teamsWebHook = r"WEBHOOK_URL_FROM_TEAMS"
@@ -13,7 +17,7 @@ tokenUrl = r"{}/rest/api/auth/token".format(monitorServer)
 alertUrl = r"{}/rest/api/monitor/alerts?token=".format(monitorServer)
 
 #used keyring to save the account to log into ArcGIS Monitor
-postData = {"username":"Site","password":keyring.get_password("monitor","Site")}
+postData = {"username":"Site","password":keyring.get_password("monitor","MONITORUSERNAME")}
 
 responseJson = requests.post(tokenUrl,data=postData,verify=False).json()
 token = responseJson['token']
