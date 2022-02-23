@@ -1,4 +1,5 @@
 # Dymaptic Monitor 2 Teams
+
 This script is setup as a Windows task that will pull Monitor Alerts and push them via a webhook to the Teams Channel of your choice.
 
 Microsoft Teams has a connector called Incoming Webhook.  Add this to the Teams Channel of your Choice. When you configure the webhook you can add a custom image and a custom Name. We recommend ArcGIS Monitor Notifications.
