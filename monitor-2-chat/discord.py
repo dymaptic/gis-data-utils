@@ -49,19 +49,19 @@ secrets = reload(secrets)
 
 @app.route(f'/{webHookGuid}', methods=['POST'])
 def processPost():
-    print(request.get_data(as_text=True, parse_form_data=True))
-    esriSHA = request.headers['X-Esrihook-Signature']
-    bytes_data = request.get_data()  # This has to be called before 
+    #print(request.get_data(as_text=True, parse_form_data=True))
+    #esriSHA = request.headers['X-Esrihook-Signature']
+    #bytes_data = request.get_data()  # This has to be called before 
     # request.form
-    print(esriSHA)
-    secret = secrets.WEBHOOKSECRET.encode('utf-8')
-    signature = 'sha256=' + hmac.new(secret, bytes_data,
-                                     digestmod=hashlib.sha256).hexdigest()
+    #print(esriSHA)
+    #secret = secrets.WEBHOOKSECRET.encode('utf-8')
+    #signature = 'sha256=' + hmac.new(secret, bytes_data,
+    #                                 digestmod=hashlib.sha256).hexdigest()
 
     #################################################
     # valid esri SHA with ours to verify the payload
-    if not hmac.compare_digest(signature, esriSHA):
-        abort(401, description='Unable to Validate WebHook Secret.')
+    #if not hmac.compare_digest(signature, esriSHA):
+    #    abort(401, description='Unable to Validate WebHook Secret.')
 
     data = json.loads(request.data)
     alertEmbeds = []
