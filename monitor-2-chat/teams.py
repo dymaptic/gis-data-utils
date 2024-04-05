@@ -48,13 +48,13 @@ secrets = reload(secrets)
 
 @app.route(f'/{webHookGuid}', methods=['POST'])
 def processPost():
-    esriSHA = request.headers['X-Esrihook-Signature']
-    bytes_data = request.get_data()  # This has to be called before
+    #esriSHA = request.headers['X-Esrihook-Signature']
+    #bytes_data = request.get_data()  # This has to be called before
     
 
-    secret = secrets.WEBHOOKSECRET.encode('utf-8')
-    signature = 'sha256=' + hmac.new(secret, bytes_data,
-                                     digestmod=hashlib.sha256).hexdigest()
+    #secret = secrets.WEBHOOKSECRET.encode('utf-8')
+    #signature = 'sha256=' + hmac.new(secret, bytes_data,
+    #                                 digestmod=hashlib.sha256).hexdigest()
 
     ##################################################
     # valid esri SHA with ours to verify the payload
