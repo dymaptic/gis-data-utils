@@ -21,7 +21,7 @@ import pymsteams
 from flask import Flask, request, abort
 
 import webhooksecrets as secrets
-from mock_data import mock_data
+
 from utils import queryAGMDB, images, verify_webhook,generateURLGUID
 from importlib import reload
 
