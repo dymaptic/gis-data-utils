@@ -36,14 +36,6 @@ EXCLUDED_ATTRIBUTES = ['id', 'opened_at', 'closed_at', 'state', 'observer_id', '
 
 #check if there is a GUID to add to the url
 webHookGuid = generateURLGUID()
-print()
-print("**********************************************************************************")
-print("paste the following url into your monitor notication webhook url")
-print(f"the webhook url is: http://127.0.0.1:5000/{webHookGuid}")
-print("if you have to change your hosts file or have a DNS name for this server the url will be:")
-print(f"the webhook url is: http://YOUR.CUSTOM.URL:5000/{webHookGuid}")
-print("**********************************************************************************")
-print()
 secrets = reload(secrets)
 
 @app.route(f'/{webHookGuid}', methods=['POST'])
