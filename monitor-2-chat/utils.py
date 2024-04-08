@@ -24,18 +24,28 @@ def generateURLGUID():
     import webhooksecrets as secrets
     """Will check the secrets if a guid exists, if not it will make it, write it and return the value
     if it does exist it will return it"""
+    webHookGuid = ""
     if hasattr(secrets, 'URL_GUID'):
-        return secrets.URL_GUID
+        webHookGuid = secrets.URL_GUID
     else:
         print("generating a new guid")
         #create the item and return
-        theGUID = str(uuid.uuid4())
+        webHookGuid = str(uuid.uuid4())
         #write to the file.
         with open(os.path.join(os.path.dirname(__file__),"webhooksecrets.py"),"a") as secretFile:
             secretFile.write(f"\nURL_GUID='{theGUID}'")
         from importlib import reload
         secrets = reload(secrets)
-        return theGUID
+    print()
+    print("**********************************************************************************")
+    print("paste the following url into your monitor notication webhook url")
+    print(f"the webhook url is: http://127.0.0.1:5000/{webHookGuid}")
+    print("if you have to change your hosts file or have a DNS name for this server the url will be:")
+    print(f"the webhook url is: http://YOUR.CUSTOM.URL:5000/{webHookGuid}")
+    print("**********************************************************************************")
+    print()
+        
+    return webHookGuid
 
 def queryAGMDB(query: str) -> Union[str, None]:
     """ Queries the ArcGIS Monitor Postgres DB and returns a value from the table or None. """
