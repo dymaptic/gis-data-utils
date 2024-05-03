@@ -7,7 +7,7 @@ Before I dive into the code setup, there is an important piece of this configura
 
 ![image](https://github.com/dymaptic/gis-data-utils/assets/93287177/6509046f-b098-4aeb-9641-b3b1ec9caeaa)
 
-##Generate a webhook URL from your chat client
+## Generate a webhook URL from your chat client
 The first step is to generate a webhook url.  Use the sections below to see how to do this in your client of choice.
 If you haven’t already, download the Python Flask application from our GitHub repo.  Put this code on a server. I suggest the server that hosts your ArcGIS Monitor installation.
 
