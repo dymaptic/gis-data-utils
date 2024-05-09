@@ -118,3 +118,10 @@ You will have to keep that flask app running yourself. There are lots of tutoria
 
 I hope you find it helpful, and maybe this can even save your organization a little bit on subscription fees.  If you find yourself having questions or needing help, please reach out! You can contact our team at support@dymaptic.com.  
 
+**dymaptic** (di-map-tick) www.dymaptic.com is an innovative, woman-owned GIS services provider offering consulting services, software development, and off-the-shelf software. As an Esri Gold Partner, we offer an exceptional level of expertise with GIS and have remarkably deep experience with the Esri platform. Our team has collectively spent decades in the industry and counts many different types of organizations among our customers. These include Fortune 500 companies, non-profits, and large municipal governments. Our ability to provide precisely what our clients need has led those clients back to us again and again.
+
+Our team’s software toolset is virtually limitless. We have proven experience in all aspects of project management, software engineering, and systems implementation across a wide range of technologies. Our team members take pride in their adaptability and breadth of knowledge, so we always seek the best solution for the task at hand regardless of what technologies that might mean. A few of the many services we provide are web, mobile, and desktop app development; database design and deployment; custom widget implementation; and server, database, and GIS configuration and administration.
+
+We also put our expertise to use by building commercial off-the-shelf products. Infomaptic is our sleek, modern web app that generates beautiful, real-time reports from your ArcGIS data. GeoBlazor is a Blazor .NET SDK that wraps the ArcGIS JavaScript SDK. It provides .NET developers a way to develop web GIS applications without having to use JavaScript.
+
+If there’s a task that intersects the worlds of GIS and software development, chances are the dymaptic team has done it and done it well. If you’re looking for a team of dedicated GIS software professionals who can deliver exactly what you need, look no further.
