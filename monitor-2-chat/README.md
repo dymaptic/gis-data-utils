@@ -9,7 +9,7 @@ Before I dive into the code setup, there is an important piece of this configura
 
 ## Generate a webhook URL from your chat client
 The first step is to generate a webhook url.  Use the sections below to see how to do this in your client of choice.
-If you haven’t already, download the Python Flask application from our GitHub repo.  Put this code on a server. I suggest the server that hosts your ArcGIS Monitor installation.
+If you haven’t already, download the Python Flask web server script from our GitHub repo.  Put this code on a server. I suggest the server that hosts your ArcGIS Monitor installation.
 
 ## Microsoft Teams
 The first step in this process is to pick a Teams channel where the output from the Monitor webhook messages will end up.  Once inside that channel, click the “Manage channel” menu item.
