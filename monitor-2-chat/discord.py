@@ -118,7 +118,7 @@ def processPost():
                        'username': 'dymaptic ArcGIS Monitor',
                        'embeds': alertEmbeds}
         # print(data)
-        response = requests.post(secrets.DISCORD_WEBHOOK_URL, json=webHookData)
+        response = requests.post(secrets.WEBHOOK_URL, json=webHookData)
         print(response.content)
 
     return 'OK'
@@ -130,7 +130,7 @@ def getHello():
     webHookData = {'content': f'Test Alert from Monitor Webhook Translator',
                    'username': 'dymaptic ArcGIS Monitor',
                    'avatar_url': images['Avatar']}
-    response = requests.post(secrets.DISCORD_WEBHOOK_URL, json=webHookData)
+    response = requests.post(secrets.WEBHOOK_URL, json=webHookData)
     print("Test message sent.  Check discord for a test message!")
 
     return 'OK'
