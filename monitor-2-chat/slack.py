@@ -121,7 +121,7 @@ def processPost():
     # Only make POST to SLACK if we actually have alerts
     if len(alertSections) > 0:
         data = {'blocks': alertSections}
-        response = requests.post(secrets.SLACK_WEBHOOK_URL, json=data)
+        response = requests.post(secrets.WEBHOOK_URL, json=data)
         print(response.content)
 
     return 'OK'
@@ -136,7 +136,7 @@ def getHello():
     alertSections.append(alertHeader)
     data = {'blocks': alertSections}
     
-    response = requests.post(secrets.SLACK_WEBHOOK_URL, json=data)
+    response = requests.post(secrets.WEBHOOK_URL, json=data)
     print("Test Message sent to Slack.  Check your slack channel.")
 
     return 'OK'

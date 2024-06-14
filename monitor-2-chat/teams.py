@@ -56,7 +56,7 @@ def processPost():
     data = json.loads(request.data)
     #print(data) #uncomment this to see the payload in the command line
     
-    myTeamsMessage = pymsteams.connectorcard(secrets.TEAMS_WEBHOOK_URL)
+    myTeamsMessage = pymsteams.connectorcard(secrets.WEBHOOK_URL)
     myTeamsMessage.title('ArcGIS Monitor Alert')
 
     alertSections = []
@@ -133,7 +133,7 @@ def processPost():
 @app.route(f'/{webHookGuid}', methods=['GET'])
 def getHello():
     print('GET REQUEST')
-    myTeamsMessage = pymsteams.connectorcard(secrets.TEAMS_WEBHOOK_URL)
+    myTeamsMessage = pymsteams.connectorcard(secrets.WEBHOOK_URL)
     myTeamsMessage.title('ArcGIS Monitor Test Alert')
     
     myTeamsMessage.text(f'Test Alert from Monitor Webhook Translator')
