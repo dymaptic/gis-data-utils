@@ -9,7 +9,7 @@ Purpose:
     1.	Calls webgisdr.bat passing along either webgisdr_full.properties or webgisdr_incremental.properties.
     2.	Use Microsoft’s robocopy to copy the backup saved locally to a different server.
     3.	Remove any backups older than 30 days (or change to your organization's policy)
-    4.	Call a Python script to parse WebGISDR’s output JSON file and send notification to Slack channel.
+    4.	Call a Python script to parse WebGISDR’s output JSON file and send notification to either a Microsoft Teams or Slack channel.
 
 Usage:
     Setup "Portal Full Backup" Windows Scheduled Task
@@ -20,8 +20,7 @@ Usage:
 
 Assumptions:
     This PowerShell script and the Python script, webgisdr_notify.py, reside in the same directory as webgisdr.bat
-    webgisdr.bat default location: C:\Program Files\ArcGIS\Portal\tools\webgisdr
-
+    Default location: C:\Program Files\ArcGIS\Portal\tools\webgisdr
 #>
 
 # Command line parameter with default value if none is provided
@@ -39,8 +38,8 @@ $jsonResults = Join-Path -Path $webgisdrDirectory -ChildPath "webgisdrResults.js
 Start-Process -FilePath $webgisdr -ArgumentList "--export --file `"$PropertiesFile`" --output `"$jsonResults`"" -NoNewWindow -Wait
 
 # Define source and destination directories (Source )
-$sourceDirectory = "C:\webgisdr_backup"  # TODO local location WebGISDR is saving backups
-$destinationDirectory = "C:\test"        # TODO ultimately store backups on another server
+$sourceDirectory = "C:\webgisdr_backup"  # TODO this should match BACKUP_LOCATION defined in the $PropertiesFile
+$destinationDirectory = "C:\test"        # TODO this should preferably be a different server where you want to save your backups
 
 # After WebGISDR is completed, move the backup to the intended location.
 # we use the * wildcard since the name of the backup will be different each time this runs.
@@ -52,7 +51,7 @@ foreach($file in $backups){
     robocopy $file.DirectoryName $destinationDirectory $file.name /z /log:"$robocopyLogFile"
 
     # If robocopy is successful, delete the backup in sourceDirectory. Note the following exit codes:
-	# https://learn.microsoft.com/en-us/troubleshoot/windows-server/backup-and-storage/return-codes-used-robocopy-utility
+	# https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy#exit-return-codes
 	# 0: No files were copied. No failure was met. No files were mismatched. The files already exist in the destination directory; so the copy operation was skipped.
 	# 1: All files were copied successfully.
 	# 2: There are some additional files in the destination directory that aren't present in the source directory. No files were copied.
@@ -64,7 +63,7 @@ foreach($file in $backups){
 # Delete backups older than 30 days.
 Get-ChildItem -Path $destinationDirectory -Filter '*.webgissite' | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | Remove-Item -Force
 
-# Parse JSON results and send Slack notification
+# Parse JSON results and send a Teams or Slack notification (if using Slack, change "teams" to "slack" below)
 # Note that both ArcGIS Server and ArcGIS Pro python environments have the keyring and requests installed by default; however, Portal does not.
 # If Portal is on its own machine, you will need to install Python (Portal doesn't have conda nor does it have pip.exe where you could simply run 'pip install requests keyring')
 # Default Python Locations
@@ -72,5 +71,5 @@ Get-ChildItem -Path $destinationDirectory -Filter '*.webgissite' | Where-Object 
 # ArcGIS Server: C:\Program Files\ArcGIS\Server\framework\runtime\ArcGIS\bin\Python\envs\arcgispro-py3
 # ArcGIS Pro:    C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
 Start-Process -FilePath "C:\Program Files\ArcGIS\Server\framework\runtime\ArcGIS\bin\Python\envs\arcgispro-py3\pythonw.exe" `
-              -ArgumentList ".\webgisdr_notify.py", "--json_file", "`"$jsonResults`"" `
+              -ArgumentList ".\webgisdr_notify.py", "--json_file", "`"$jsonResults`"", "--chat_software", "teams" `
               -NoNewWindow -Wait
