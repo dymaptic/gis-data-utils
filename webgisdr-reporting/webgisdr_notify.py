@@ -107,7 +107,7 @@ def main():
                                     "type": "TextBlock",
                                     "size": "large",
                                     "weight": "bolder",
-                                    "text": "WebGISDR Results"
+                                    "text": "WebGISDR Summary"
                                 },
                                 {
                                     "type": "FactSet",
@@ -150,7 +150,7 @@ def main():
                         "type": "header",
                         "text": {
                             "type": "plain_text",
-                            "text": f"WebGISDR Mode: {results['operation']}"
+                            "text": "WebGISDR Summary"
                         }
                     },
                     {
@@ -158,9 +158,8 @@ def main():
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Overall Summary:*\n"
-                                        f"Result: {results['status']}\n"
-                                        f"Elapsed Time{results['elapsedTime']}\n"
+                                "text": f"*Overall Result:* {results['status']}\n"
+                                        f"Elapsed Time: {results['elapsedTime']}\n"
                                         f"Zip Time: {results['zipTime']}\n"
                             }
                         ]

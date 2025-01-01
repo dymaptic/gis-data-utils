@@ -1,5 +1,5 @@
 ﻿<#
-Name: webgisdr_backup.ps1
+Name: WebgisdrBackupAndNotify.ps1
 Purpose:
     PowerShell script that is meant to be called twice from Windows Task Scheduler - once with a weekly trigger for
     Full backups and the other with weeknight triggers for Incremental backups (note: a full backup must be run prior
@@ -13,14 +13,17 @@ Purpose:
 
 Usage:
     Setup "Portal Full Backup" Windows Scheduled Task
-    powershell.exe -ExecutionPolicy Bypass -File webgisdr_backup.ps1 -PropertiesFile "path\to\webgisdr_full.properties"
+    powershell.exe -ExecutionPolicy Bypass -File WebgisdrBackupAndNotify.ps1 -PropertiesFile "path\to\webgisdr_full.properties"
 
     Setup "Portal Incremental Backup" Windows Scheduled Task
-    powershell.exe -ExecutionPolicy Bypass -File webgisdr_backup.ps1 -PropertiesFile "path\to\webgisdr_incremental.properties"
+    powershell.exe -ExecutionPolicy Bypass -File WebgisdrBackupAndNotify.ps1 -PropertiesFile "path\to\webgisdr_incremental.properties"
 
 Assumptions:
     This PowerShell script and the Python script, webgisdr_notify.py, reside in the same directory as webgisdr.bat
     Default location: C:\Program Files\ArcGIS\Portal\tools\webgisdr
+
+Author: Ed Conrad
+Created: 12/18/2024
 #>
 
 # Command line parameter with default value if none is provided
@@ -30,12 +33,13 @@ param(
 
 # Define variables for WebGISDR
 $webgisdrDirectory = "C:\Program Files\ArcGIS\Portal\tools\webgisdr"
-$webgisdr = Join-Path -Path $webgisdrDirectory -ChildPath "webgisdr.bat"
 $jsonResults = Join-Path -Path $webgisdrDirectory -ChildPath "webgisdrResults.json"
 
 # Call ESRI's WebGIS Disaster and Recovery Utility with the export option, pointed to the properties file, and setup to create a JSON file.
 # run it synchronously by using -Wait (Start-Process runs asynchronously by default)
-Start-Process -FilePath $webgisdr -ArgumentList "--export --file `"$PropertiesFile`" --output `"$jsonResults`"" -NoNewWindow -Wait
+Start-Process -FilePath (Join-Path -Path $webgisdrDirectory -ChildPath "webgisdr.bat") `
+              -ArgumentList "--export --file `"$PropertiesFile`" --output `"$jsonResults`"" `
+              -NoNewWindow -Wait
 
 # Define source and destination directories (Source )
 $sourceDirectory = "C:\webgisdr_backup"  # TODO this should match BACKUP_LOCATION defined in the $PropertiesFile
