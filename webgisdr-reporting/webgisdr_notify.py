@@ -65,8 +65,8 @@ def main():
             results = json.load(f)
 
         chat = args.chat_software
-        if chat is None or chat.lower() not in ('slack', 'teams'):
-            raise ValueError('Invalid value provided for chat_software argument. Valid values include slack or teams.')
+        if chat is None:
+            raise ValueError('Missing value for the required --chat_software parameter.')
 
         chat = chat.lower()
         if chat == 'teams':
