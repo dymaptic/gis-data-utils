@@ -75,6 +75,8 @@ def main():
         elif chat == 'slack':
             service_name = 'Slack_Webhook_WebGISDR_Notification'
             username = 'Slack_webhook_default'
+        else:
+            raise ValueError('Invalid value provided for chat_software argument. Valid values include slack or teams.')
 
         # TODO Instructions to user:
         # - First run only, provide the webhook_url in plain text.
