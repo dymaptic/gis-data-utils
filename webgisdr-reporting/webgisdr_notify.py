@@ -5,7 +5,7 @@ Purpose:
     It parses the results and creates a notification on a Slack channel.
 
 Requirements:
-    - ArcGIS Enterprise 11.0+ (the JSON output argument doesn't exist at earlier versions)
+    - ArcGIS Enterprise 11.0+ (the JSON output argument doesn't exist in earlier versions)
     - Place script in the same directory as webgisdr.bat
     - Setup Incoming Webhooks for Slack or Teams
 
@@ -55,25 +55,36 @@ def main():
         # command-line code
         parser = argparse.ArgumentParser(description='Python script parses the WebGISDR output JSON file and sends a '
                                                      'Notification to Slack.')
-        parser.add_argument('--json_file', type=str,
+        parser.add_argument(name_or_flags='--json_file', type=str,
                             help='The WebGISDR output JSON file.')
-        parser.add_argument('--chat_software', type=str,
+        parser.add_argument(name_or_flags='--chat_software', type=str,
                             help='The location where the notification will go. Valid values are teams and slack.')
         args = parser.parse_args()
+
+        # Read the Portal backup JSON results file (i.e., the value of webgisdr.bat's --output parameter)
         json_file = args.json_file
-        with open(json_file, 'r') as f:
-            results = json.load(f)
+        if json_file is None:
+            raise ValueError('Missing value for the required --json_file parameter.')
+        try:
+            with open(json_file, 'r') as f:
+                results = json.load(f)
+        except FileNotFoundError:
+            logging.error(f'FileNotFoundError: unable to find {json_file}')
+            sys.exit(1)
 
         chat = args.chat_software
-        if chat is None or chat.lower() not in ('slack', 'teams'):
-            raise ValueError('Invalid value provided for chat_software argument. Valid values include slack or teams.')
+        if chat is None:
+            raise ValueError('Missing value for the required --chat_software parameter.')
 
-        if chat.lower() == 'teams':
+        chat = chat.lower()
+        if chat == 'teams':
             service_name = 'Teams_Webhook_WebGISDR_Notification'
             username = 'Teams_webhook_default'  # NOTE: the keyring module requires a username when saving a credential.
-        elif chat.lower() == 'slack':
+        elif chat == 'slack':
             service_name = 'Slack_Webhook_WebGISDR_Notification'
             username = 'Slack_webhook_default'
+        else:
+            raise ValueError('Invalid value provided for chat_software argument. Valid values include slack or teams.')
 
         # TODO Instructions to user:
         # - First run only, provide the webhook_url in plain text.
@@ -90,8 +101,9 @@ def main():
             logging.error('Unable to post notification - missing Webhook URL.')
             sys.exit(1)
 
+        # Place the WebGISDR results into the data structure expected by the chat software.
         payload = {}
-        if chat.lower() == 'teams':
+        if chat == 'teams':
             payload = {
                 "type": "message",
                 "attachments": [
@@ -142,7 +154,7 @@ def main():
                                               {'title': 'Elapsed Time', 'value': r['elapsedTime']}]
                                 })
 
-        elif chat.lower() == 'slack':
+        elif chat == 'slack':
             # Slack's data structure formatting https://api.slack.com/reference/surfaces/formatting
             payload = {
                 "blocks": [
@@ -185,10 +197,12 @@ def main():
 
         response = requests.post(url=webhook_url, json=payload, headers={"Content-Type": "application/json"})
         response.raise_for_status()
-        if response.status_code == 200:
+
+        # Slack is returning 200 while Teams has been returning both 200 and 202.
+        if 200 <= response.status_code < 300:
             logging.info(f'Successfully posted WebGISDR notification in {chat}.')
         else:
-            logging.error(f'Failed to post WebGISDR notification in {chat}.\n{response.json()}')
+            logging.error(f'Failed to post WebGISDR notification in {chat}.\n{response.status_code}')
 
     except:
         logging.error(f'\n{traceback.format_exc()}')
