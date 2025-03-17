@@ -1,0 +1,14 @@
+{
+  "powershellScript": {
+    "webgisdrDirectory": "C:\\Program Files\\ArcGIS\\Portal\\tools\\webgisdr",
+    "webgisdrResultsJsonFilename": "webgisdrResults.json",
+    "localBackupLocation": "C:\\webgisdr_backup",
+    "destinationBackupLocation": "C:\\test",
+    "daysToKeepBackups": 30,
+    "python": "C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\pythonw.exe"
+  },
+  "pythonScript": {
+      "chatSoftware": "teams",
+      "webhookURL":  ""
+  }
+}

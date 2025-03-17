@@ -1,13 +1,14 @@
 """=====================================================================================================================
 Name: webgisdr_notify.py
 Purpose:
-    Script is meant to be called via command line, passing it the output JSON file from WebGISDR.
-    It parses the results and creates a notification on a Slack channel.
+    Script parses the JSON results output file that WebGISDR.bat creates when it's run with an output file argument.
+    It then sends a notification to either Teams or Slack depending on what has been configured.
 
 Requirements:
     - ArcGIS Enterprise 11.0+ (the JSON output argument doesn't exist in earlier versions)
     - Place script in the same directory as webgisdr.bat
     - Setup Incoming Webhooks for Slack or Teams
+    - Ensure that you have configured everything by updating values in config.json
 
 Slack Instructions:
     - Login to Slack (https://api.slack.com/apps) and connect/open your Workspace.
@@ -16,9 +17,9 @@ Slack Instructions:
     - Provide an app name such as "WebGISDR Notification", select your Workspace, and select "Create App".
     - Under Features, select "Incoming Webhooks", activate them.
     - Select "Add New Webhook to Workspace", choose the Slack Channel you want Notifications to appear & select "Allow".
-    - Copy the Webhook URL that is generated and keep it secret.
-        - First time this script runs, hardcode the URL and assign it to the webhook_url Python variable.
-        - Subsequently, change webhook_url back to an empty string, so it's no longer in plain-text.
+    - Copy the Webhook URL that is generated and put it in config.json
+        - First time this script runs, this URL will be saved to Windows Credential Manager.
+        - Subsequently, you could change the webhookURL value in config.json back to an empty string to keep it secret.
 
 Teams Instructions:
     - Open Microsoft Teams.
@@ -27,19 +28,17 @@ Teams Instructions:
     - Give it a name such as "WebGISDR Notification", ensure that under connections, you are signed in and select Next.
     - After Details load, it will give you another opportunity to change which Team and Channel to post the
     notifications to. Select Add Workflow and a PowerAutomate Flow will be created.
-    - Copy the Webhook URL and place it into the webgisdr_notify.py script.
-        - First time this script runs, hardcode the URL and assign it to the webhook_url Python variable.
-        - Subsequently, change webhook_url back to an empty string, so it's no longer in plain-text.
+    - Copy the Webhook URL that is generated and put it in config.json
+        - First time this script runs, this URL will be saved to Windows Credential Manager.
+        - Subsequently, you could change the webhookURL value in config.json back to an empty string to keep it secret.
 
 Author: Ed Conrad
 Created: 12/18/2024
 ====================================================================================================================="""
 
-import argparse
 import json
 import logging
 import os
-import sys
 import traceback
 
 import keyring
@@ -47,62 +46,50 @@ import requests
 
 
 def main():
-    log = os.path.join(os.path.dirname(__file__), "Webgisdr_Notify_Python.log")
+    script_dir = os.path.dirname(__file__)
+    log = os.path.join(script_dir, "Webgisdr_Notify_Python.log")
     logging.basicConfig(filename=log, level=logging.INFO, filemode='w',
                         format='%(asctime)s %(levelname)s %(message)s',
                         datefmt='%#m/%#d/%Y %#I:%M:%S %p')
+    config_file = os.path.join(script_dir, 'config.json')
+
     try:
-        # command-line code
-        parser = argparse.ArgumentParser(description='Python script parses the WebGISDR output JSON file and sends a '
-                                                     'Notification to Slack.')
-        parser.add_argument(name_or_flags='--json_file', type=str,
-                            help='The WebGISDR output JSON file.')
-        parser.add_argument(name_or_flags='--chat_software', type=str,
-                            help='The location where the notification will go. Valid values are teams and slack.')
-        args = parser.parse_args()
+        with open(config_file, mode='r') as file:
+            config = json.load(file)
+        config = config.get('pythonScript')
 
-        # Read the Portal backup JSON results file (i.e., the value of webgisdr.bat's --output parameter)
-        json_file = args.json_file
-        if json_file is None:
-            raise ValueError('Missing value for the required --json_file parameter.')
-        try:
-            with open(json_file, 'r') as f:
-                results = json.load(f)
-        except FileNotFoundError:
-            logging.error(f'FileNotFoundError: unable to find {json_file}')
-            sys.exit(1)
-
-        chat = args.chat_software
-        if chat is None:
-            raise ValueError('Missing value for the required --chat_software parameter.')
+        chat = config.get('chatSoftware')
+        if not chat or chat.lower() not in ('teams', 'slack'):
+            raise ValueError('Missing or invalid chatSoftware value. Valid values include slack or teams.')
 
         chat = chat.lower()
         if chat == 'teams':
             service_name = 'Teams_Webhook_WebGISDR_Notification'
             username = 'Teams_webhook_default'  # NOTE: the keyring module requires a username when saving a credential.
-        elif chat == 'slack':
+        else:
             service_name = 'Slack_Webhook_WebGISDR_Notification'
             username = 'Slack_webhook_default'
-        else:
-            raise ValueError('Invalid value provided for chat_software argument. Valid values include slack or teams.')
 
-        # TODO Instructions to user:
-        # - First run only, provide the webhook_url in plain text.
-        # - Subsequently, change it back to an empty string to keep it secret.
-        webhook_url = ''
-        if webhook_url == '':
+        webhook_url = config.get('webhookURL')
+        if not webhook_url:
+
             # Retrieve URL from Windows Credential Store
             webhook_url = keyring.get_password(service_name=service_name, username=username)
+            if not webhook_url:
+                raise ValueError('Unable to post notification - missing Webhook URL.')
         else:
             # Save URL to Windows Credential Store
             keyring.set_password(service_name=service_name, username=username, password=webhook_url)
-
-        if webhook_url == '':
-            logging.error('Unable to post notification - missing Webhook URL.')
-            sys.exit(1)
+            logging.info('Saved webhookURL to Windows Credential Store. You may set it to an empty string in the config '
+                         'file and next time, it will be obtained using the keyring Python module.')
 
         # Place the WebGISDR results into the data structure expected by the chat software.
-        payload = {}
+        results_file = config.get('webgisdrResultsJsonFilename')
+        if not results_file or not os.path.exists(results_file) or os.path.splitext(results_file)[1].lower() != '.json':
+            raise ValueError("Missing or invalid path to the WebGISDR results JSON file. (i.e., the value of webgisdr.bat's --output parameter)")
+        with open(results_file, mode='r') as file:
+            results = json.load(file)
+
         if chat == 'teams':
             payload = {
                 "type": "message",
@@ -154,7 +141,7 @@ def main():
                                               {'title': 'Elapsed Time', 'value': r['elapsedTime']}]
                                 })
 
-        elif chat == 'slack':
+        else:
             # Slack's data structure formatting https://api.slack.com/reference/surfaces/formatting
             payload = {
                 "blocks": [
@@ -205,7 +192,7 @@ def main():
             logging.error(f'Failed to post WebGISDR notification in {chat}.\n{response.status_code}')
 
     except:
-        logging.error(f'\n{traceback.format_exc()}')
+        logging.error(f'{traceback.format_exc()}')
 
 
 if __name__ == '__main__':
