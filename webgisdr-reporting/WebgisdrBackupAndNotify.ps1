@@ -43,43 +43,43 @@ if (Test-Path $configPath) {
     # Read and parse the JSON configuration file
     $config = Get-Content $configPath | ConvertFrom-Json
 
-    $powershellScriptConfig = $config.powershellScript
-    $webgisdrDirectory = $powershellScriptConfig.webgisdrDirectory
+    $powershellConfig  = $config.powershellScriptSettings
+    $sharedConfig = $config.sharedSettings
+    $webgisdrDirectory = $powershellConfig.webgisdrDirectory
     if (!(Test-Path $webgisdrDirectory)) {
         throw "WebGISDR Directory not found at $webgisdrDirectory"
     }
 
-    $jsonResults = Join-Path -Path $webgisdrDirectory -ChildPath $powershellScriptConfig.webgisdrResultsJsonFilename
+    $jsonResults = Join-Path -Path $webgisdrDirectory -ChildPath $sharedConfig.webgisdrResultsJsonFilename
 
     # Define the local location to save the backup (this should match BACKUP_LOCATION defined in the $PropertiesFile)
-    $localBackupLocation = $powershellScriptConfig.localBackupLocation
+    $localBackupLocation = $powershellConfig.localBackupLocation
     if (!(Test-Path $localBackupLocation)) {
         throw "BACKUP_LOCATION not found at $localBackupLocation"
     }
 
     # This should preferably be a different server where you want to save your backups
-    $destinationBackupLocation = $powershellScriptConfig.destinationBackupLocation
+    $destinationBackupLocation = $powershellConfig.destinationBackupLocation
     if (!(Test-Path $destinationBackupLocation)) {
         throw "Destination backup location not found at $destinationBackupLocation"
     }
 
-    $days = $powershellScriptConfig.daysToKeepBackups
+    $days = $powershellConfig.daysToKeepBackups
     [int]$daysToKeepBackups = 0
     if (-not [int]::TryParse($days, [ref]$daysToKeepBackups)) {
         throw 'Invalid value for days to keep backups. Enter a numeric value or a number as a string (e.g., 30 or "30")'
     }
 
-    $pythonExe = $powershellScriptConfig.python
+    $pythonExe = $powershellConfig.python
     if (!(Test-Path $pythonExe)) {
         throw "Python.exe not found at $pythonExe"
     }
 
     # Output for debugging
     Write-Output "WebGISDR Directory: $webgisdrDirectory"
-    Write-Output "JSON Results File: $jsonResults"
     Write-Output "Local Backup location (BACKUP_LOCATION): $localBackupLocation"
     Write-Output "Destination Backup location (preferably another server): $destinationBackupLocation"
-    Write-Output "JSON Results File: $jsonResults"
+    Write-Output "WebGISDR JSON Results File: $jsonResults"
     Write-Output "Days to keep backups: $daysToKeepBackups"
 } else {
     throw "Config file not found at $configPath"

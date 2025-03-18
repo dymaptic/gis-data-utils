@@ -56,9 +56,10 @@ def main():
     try:
         with open(config_file, mode='r') as file:
             config = json.load(file)
-        config = config.get('pythonScript')
+        python_config = config.get('pythonScriptSettings')
+        shared_config = config.get('sharedSettings')
 
-        chat = config.get('chatSoftware')
+        chat = python_config.get('chatSoftware')
         if not chat or chat.lower() not in ('teams', 'slack'):
             raise ValueError('Missing or invalid chatSoftware value. Valid values include slack or teams.')
 
@@ -70,7 +71,7 @@ def main():
             service_name = 'Slack_Webhook_WebGISDR_Notification'
             username = 'Slack_webhook_default'
 
-        webhook_url = config.get('webhookURL')
+        webhook_url = python_config.get('webhookURL')
         if not webhook_url:
 
             # Retrieve URL from Windows Credential Store
@@ -84,7 +85,7 @@ def main():
                          'file and next time, it will be obtained using the keyring Python module.')
 
         # Place the WebGISDR results into the data structure expected by the chat software.
-        results_file = config.get('webgisdrResultsJsonFilename')
+        results_file = shared_config.get('webgisdrResultsJsonFilename')
         if not results_file or not os.path.exists(results_file) or os.path.splitext(results_file)[1].lower() != '.json':
             raise ValueError("Missing or invalid path to the WebGISDR results JSON file. (i.e., the value of webgisdr.bat's --output parameter)")
         with open(results_file, mode='r') as file:
