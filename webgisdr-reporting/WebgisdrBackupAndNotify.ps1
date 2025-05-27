@@ -19,8 +19,9 @@ Usage:
     powershell.exe -ExecutionPolicy Bypass -File WebgisdrBackupAndNotify.ps1 -PropertiesFile "path\to\webgisdr_incremental.properties"
 
 Assumptions:
-    This PowerShell script and the Python script, webgisdr_notify.py, reside in the same directory as webgisdr.bat
-    Default location: C:\Program Files\ArcGIS\Portal\tools\webgisdr
+    This PowerShell script, the Python script (i.e., webgisdr_notify.py), and the configuration file (config.json)
+    reside in the same directory as webgisdr.bat
+    Default webgisdr location: C:\Program Files\ArcGIS\Portal\tools\webgisdr
 
 Author: Ed Conrad
 Created: 12/18/2024
@@ -31,9 +32,58 @@ param(
     [string]$PropertiesFile = "C:\Program Files\ArcGIS\Portal\tools\webgisdr\webgisdr_full.properties"
 )
 
-# Define variables for WebGISDR
-$webgisdrDirectory = "C:\Program Files\ArcGIS\Portal\tools\webgisdr"
-$jsonResults = Join-Path -Path $webgisdrDirectory -ChildPath "webgisdrResults.json"
+# Get the script's directory
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+# Define the path to config.json
+$configPath = Join-Path -Path $scriptDir -ChildPath "config.json"
+
+# Check if config.json exists
+if (Test-Path $configPath) {
+    # Read and parse the JSON configuration file
+    $config = Get-Content $configPath | ConvertFrom-Json
+
+    $powershellConfig  = $config.powershellScriptSettings
+    $sharedConfig = $config.sharedSettings
+    $webgisdrDirectory = $powershellConfig.webgisdrDirectory
+    if (!(Test-Path $webgisdrDirectory)) {
+        throw "WebGISDR Directory not found at $webgisdrDirectory"
+    }
+
+    $jsonResults = Join-Path -Path $webgisdrDirectory -ChildPath $sharedConfig.webgisdrResultsJsonFilename
+
+    # Define the local location to save the backup (this should match BACKUP_LOCATION defined in the $PropertiesFile)
+    $localBackupLocation = $powershellConfig.localBackupLocation
+    if (!(Test-Path $localBackupLocation)) {
+        throw "BACKUP_LOCATION not found at $localBackupLocation"
+    }
+
+    # This should preferably be a different server where you want to save your backups
+    $destinationBackupLocation = $powershellConfig.destinationBackupLocation
+    if (!(Test-Path $destinationBackupLocation)) {
+        throw "Destination backup location not found at $destinationBackupLocation"
+    }
+
+    $days = $powershellConfig.daysToKeepBackups
+    [int]$daysToKeepBackups = 0
+    if (-not [int]::TryParse($days, [ref]$daysToKeepBackups)) {
+        throw 'Invalid value for days to keep backups. Enter a numeric value or a number as a string (e.g., 30 or "30")'
+    }
+
+    $pythonExe = $powershellConfig.python
+    if (!(Test-Path $pythonExe)) {
+        throw "Python.exe not found at $pythonExe"
+    }
+
+    # Output for debugging
+    Write-Output "WebGISDR Directory: $webgisdrDirectory"
+    Write-Output "Local Backup location (BACKUP_LOCATION): $localBackupLocation"
+    Write-Output "Destination Backup location (preferably another server): $destinationBackupLocation"
+    Write-Output "WebGISDR JSON Results File: $jsonResults"
+    Write-Output "Days to keep backups: $daysToKeepBackups"
+} else {
+    throw "Config file not found at $configPath"
+}
 
 # Call ESRI's WebGIS Disaster and Recovery Utility with the export option, pointed to the properties file, and setup to create a JSON file.
 # run it synchronously by using -Wait (Start-Process runs asynchronously by default)
@@ -41,20 +91,17 @@ Start-Process -FilePath (Join-Path -Path $webgisdrDirectory -ChildPath "webgisdr
               -ArgumentList "--export --file `"$PropertiesFile`" --output `"$jsonResults`"" `
               -NoNewWindow -Wait
 
-# Define source and destination directories (Source )
-$sourceDirectory = "C:\webgisdr_backup"  # TODO this should match BACKUP_LOCATION defined in the $PropertiesFile
-$destinationDirectory = "C:\test"        # TODO this should preferably be a different server where you want to save your backups
 
 # After WebGISDR is completed, move the backup to the intended location.
 # we use the * wildcard since the name of the backup will be different each time this runs.
-$backups = Get-ChildItem $sourceDirectory -Filter *.webgissite
+$backups = Get-ChildItem $localBackupLocation -Filter *.webgissite
 $robocopyLogFile = Join-Path -Path $webgisdrDirectory -ChildPath "robocopyResults.log"
 
 foreach($file in $backups){
 	# /z option copies files in restartable mode. In restartable mode, should a file copy be interrupted, robocopy can pick up where it left off rather than recopying the entire file.
-    robocopy $file.DirectoryName $destinationDirectory $file.name /z /log:"$robocopyLogFile"
+    robocopy $file.DirectoryName $destinationBackupLocation $file.name /z /log:"$robocopyLogFile"
 
-    # If robocopy is successful, delete the backup in sourceDirectory. Note the following exit codes:
+    # If robocopy is successful, delete the backup in localBackupLocation. Note the following exit codes:
 	# https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy#exit-return-codes
 	# 0: No files were copied. No failure was met. No files were mismatched. The files already exist in the destination directory; so the copy operation was skipped.
 	# 1: All files were copied successfully.
@@ -64,16 +111,16 @@ foreach($file in $backups){
     }
 }
 
-# Delete backups older than 30 days.
-Get-ChildItem -Path $destinationDirectory -Filter '*.webgissite' | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-30) } | Remove-Item -Force
+# Delete backups older than daysToKeepBackups.
+Get-ChildItem -Path $destinationBackupLocation -Filter '*.webgissite' | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-$daysToKeepBackups) } | Remove-Item -Force
 
-# Parse JSON results and send a Teams or Slack notification (if using Slack, change "teams" to "slack" below)
+# Run Python file that parses JSON results and sends a notification to Teams or Slack
 # Note that both ArcGIS Server and ArcGIS Pro python environments have the keyring and requests installed by default; however, Portal does not.
 # If Portal is on its own machine, you will need to install Python (Portal doesn't have conda nor does it have pip.exe where you could simply run 'pip install requests keyring')
 # Default Python Locations
 # Portal:        C:\Program Files\ArcGIS\Portal\framework\runtime\python  # <-- Missing both keyring and requests!
 # ArcGIS Server: C:\Program Files\ArcGIS\Server\framework\runtime\ArcGIS\bin\Python\envs\arcgispro-py3
 # ArcGIS Pro:    C:\Program Files\ArcGIS\Pro\bin\Python\envs\arcgispro-py3
-Start-Process -FilePath "C:\Program Files\ArcGIS\Server\framework\runtime\ArcGIS\bin\Python\envs\arcgispro-py3\pythonw.exe" `
-              -ArgumentList ".\webgisdr_notify.py", "--json_file", "`"$jsonResults`"", "--chat_software", "teams" `
+Start-Process -FilePath $pythonExe `
+              -ArgumentList ".\webgisdr_notify.py" `
               -NoNewWindow -Wait

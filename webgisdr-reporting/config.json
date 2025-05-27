@@ -1,0 +1,16 @@
+{
+  "sharedSettings": {
+    "webgisdrResultsJsonFilename": "webgisdrResults.json"
+  },
+  "powershellScriptSettings": {
+    "webgisdrDirectory": "C:\\Program Files\\ArcGIS\\Portal\\tools\\webgisdr",
+    "localBackupLocation": "C:\\webgisdr_backup",
+    "destinationBackupLocation": "C:\\test",
+    "daysToKeepBackups": 30,
+    "python": "C:\\Program Files\\ArcGIS\\Pro\\bin\\Python\\envs\\arcgispro-py3\\pythonw.exe"
+  },
+  "pythonScriptSettings": {
+      "chatSoftware": "teams",
+      "webhookURL":  ""
+  }
+}
