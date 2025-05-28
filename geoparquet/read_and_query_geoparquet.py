@@ -9,13 +9,13 @@ Author: Ed Conrad
 Created: 5/27/2025
 ====================================================================================================================="""
 
-import arcpy
 import os
 import duckdb
 from collections import namedtuple
 
 
 def main():
+    import arcpy
     profile = os.environ['USERPROFILE']
     pro_project = os.path.join(profile, r'Documents\ArcGIS\Projects\Data_Management\Data_Management.aprx')
     aprx = arcpy.mp.ArcGISProject(pro_project)
@@ -41,9 +41,8 @@ def main():
     # Define a BoundingBox named tuple and populate it with Colorado's bounding box values
     BoundingBox = namedtuple(typename='BoundingBox', field_names=['xmin', 'xmax', 'ymin', 'ymax'])
     colorado_bbox = BoundingBox(xmin=-109, xmax=-102, ymin=37, ymax=41)
-    colorado_bbox = BoundingBox(xmin=-108.2, xmax=-104.5, ymin=37, ymax=41)
 
-    # Query Colorado mountain peaks from the Overture Maps dataset using DuckDB.
+    # region Get Colorado Fourteeners!
     # Overture Maps is an open data initiative that provides geospatial data in GeoParquet format,
     # which can be queried efficiently using DuckDB’s built-in Parquet and spatial extensions.
     # Dataset Schema: https://docs.overturemaps.org/schema/reference/base/land/
@@ -80,9 +79,9 @@ def main():
 
     # Insert that data read from GeoParquet into an Esri Feature Class
     import arcpy
-    print('Creating the Colorado_Fourteeners feature class...')
+    print('Creating the Fourteeners feature class...')
     peaks_fc = arcpy.management.CreateFeatureclass(out_path=out_path,
-                                                   out_name='Colorado_Fourteeners',
+                                                   out_name='Fourteeners',
                                                    geometry_type='POINT',
                                                    spatial_reference=wgs84).getOutput(0)
     arcpy.management.AddField(in_table=peaks_fc, field_name='Name', field_type='TEXT', field_length=50)
@@ -93,7 +92,7 @@ def main():
                                                       'shape@']) as iCursor:
         # Fetches a single row as a tuple
         raw_row = duck_peaks.fetchone()
-        i = 1
+        i = 0
         while raw_row:
             if i % 5 == 0:
                 print(f'\t-Inserted {i} peaks...')
@@ -106,9 +105,10 @@ def main():
             iCursor.insertRow(row)
             raw_row = duck_peaks.fetchone()
             i += 1
-    print(f'\tSummary: inserted {i} peaks into the Colorado_Fourteeners feature class.')
+    print(f'\tSummary: {i} points exist in the Fourteeners feature class.')
+    # endregion
 
-    # Get Colorado Breweries!
+    # region Get Colorado Breweries!
     sql = f"""
             SELECT
                 names.primary AS Name,
@@ -120,7 +120,7 @@ def main():
             FROM
                 read_parquet(
                     's3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*',
-                    filename=true, 
+                    filename=false,
                     hive_partitioning=1
                 )
             WHERE 
@@ -133,9 +133,9 @@ def main():
     duck_breweries = conn.sql(sql)
 
     # Insert that data read from GeoParquet into an Esri Feature Class
-    print('Creating the Colorado_Breweries feature class...')
+    print('Creating the Breweries feature class...')
     breweries_fc = arcpy.management.CreateFeatureclass(out_path=out_path,
-                                                       out_name='Colorado_Breweries',
+                                                       out_name='Breweries',
                                                        geometry_type='POINT',
                                                        spatial_reference=wgs84).getOutput(0)
     arcpy.management.AddField(in_table=breweries_fc, field_name='Name', field_type='TEXT', field_length=100)
@@ -147,7 +147,7 @@ def main():
     with arcpy.da.InsertCursor(breweries_fc, field_names=['Name', 'Address', 'City', 'Zip', 'Phone_Number', 'shape@']) as iCursor:
         # Get a single row as a tuple
         raw_row = duck_breweries.fetchone()
-        i = 1
+        i = 0
         while raw_row:
             if i % 50 == 0:
                 print(f'\t-Inserted {i} breweries...')
@@ -160,7 +160,173 @@ def main():
             iCursor.insertRow(row)
             raw_row = duck_breweries.fetchone()
             i += 1
-    print(f'\tSummary: inserted {i} breweries into the Colorado_Breweries feature class.')
+    print(f'\tSummary: {i} points exist in the Breweries feature class.')
+    # endregion
+
+    # region Get Colorado Road Segments!
+    # According to the docs, the definition for subtype of 'road':
+    # "A road segment represents a section of any kind of road, street or path, including a dedicated path for walking or cycling, but excluding a railway."
+    # As of 5/28/25 the names.primary is returning segment type - which differs from the docs.
+    sql = f"""
+            SELECT
+                names.primary as SegmentType,                
+                ST_AsWKB(geometry) AS wkb
+            FROM
+                read_parquet(
+                    's3://overturemaps-us-west-2/release/{release}/theme=transportation/type=segment/*',
+                    filename=false, 
+                    hive_partitioning=1
+                )
+            WHERE 
+                subtype = 'road'
+                AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
+                AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+        """
+
+    # Get DuckDB Query Relation object
+    duck_segments = conn.sql(sql)
+
+    # Insert that data read from GeoParquet into an Esri Feature Class
+    print('Creating the Route_Segments feature class...')
+    segments_fc = arcpy.management.CreateFeatureclass(out_path=out_path,
+                                                   out_name='Route_Segments',
+                                                   geometry_type='POLYLINE',
+                                                   spatial_reference=wgs84).getOutput(0)
+    arcpy.management.AddField(in_table=segments_fc, field_name='Segment_Type', field_type='TEXT', field_length=20)
+    with arcpy.da.InsertCursor(segments_fc, field_names=['shape@', 'Segment_Type']) as iCursor:
+        # Get a single row as a tuple
+        raw_row = duck_segments.fetchone()
+        i = 0
+        while raw_row:
+            if i % 25_000 == 0:
+                print(f'\t-Inserted {i:,} segments...')
+
+            # Cast the tuple to list since we need to modify it
+            row = list(raw_row)
+
+            # Convert the Well-Known Binary (WKB) string to an Esri Geometry object
+            row[0] = arcpy.FromWKB(row[-1])
+            iCursor.insertRow(row)
+            raw_row = duck_segments.fetchone()
+            i += 1
+    print(f'\tSummary: {i:,} polylines exist in the Route_Segments feature class.')
+
+    # region Get Colorado Road Connectors!
+    sql = f"""
+            SELECT
+                ST_AsWKB(geometry) AS wkb
+            FROM
+                read_parquet(
+                    's3://overturemaps-us-west-2/release/{release}/theme=transportation/type=connector/*',
+                    filename=false, 
+                    hive_partitioning=1
+                )
+            WHERE 
+                bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
+                AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+        """
+
+    # Get DuckDB Query Relation object
+    duck_connectors = conn.sql(sql)
+
+    # Insert that data read from GeoParquet into an Esri Feature Class
+    print('Creating the Route_Connectors feature class...')
+    connectors_fc = arcpy.management.CreateFeatureclass(out_path=out_path,
+                                                      out_name='Route_Connectors',
+                                                      geometry_type='POINT',
+                                                      spatial_reference=wgs84).getOutput(0)
+
+    with arcpy.da.InsertCursor(connectors_fc, field_names=['shape@']) as iCursor:
+        # Get a single row as a tuple
+        raw_row = duck_connectors.fetchone()
+        i = 0
+        while raw_row:
+            if i % 10_000 == 0:
+                print(f'\t-Inserted {i:,} connectors...')
+
+            # Cast the tuple to list since we need to modify it
+            row = list(raw_row)
+
+            # Convert the Well-Known Binary (WKB) string to an Esri Geometry object
+            row[0] = arcpy.FromWKB(row[-1])
+            iCursor.insertRow(row)
+            raw_row = duck_connectors.fetchone()
+            i += 1
+    print(f'\tSummary: {i:,} points exist in the Route_Connectors feature class.')
+    # endregion
+
+    # Close DuckDB connection
+    conn.close()
+
+    # region Network Analyst section
+    # Check out Network Analyst license if available. Fail if the Network Analyst license is not available.
+    if arcpy.CheckExtension('Network') == 'Available':
+        arcpy.CheckOutExtension('Network')
+    else:
+        raise arcpy.ExecuteError('Network Analyst Extension license is not available.')
+
+    import arcpy.na
+    print('Creating Route_Network...')
+    arcpy.na.CreateNetworkDataset(feature_dataset=out_path,
+                                  out_name='Route_Network',
+                                  source_feature_class_names='Route_Segments;Route_Connectors',
+                                  elevation_model='NO_ELEVATION')
+    network = os.path.join(out_path, 'Route_Network')
+
+    print('Creating Closest Facility Analysis Layers')
+    closest_facility_lyr = arcpy.na.MakeClosestFacilityAnalysisLayer(network_data_source=network,
+                                                                     layer_name='ClosestBreweriesToFourteeners',
+                                                                     travel_direction='TO_FACILITIES',
+                                                                     number_of_facilities_to_find=3).getOutput(0)
+    print('Building Network...')
+    arcpy.na.BuildNetwork(network)
+    print('Network built!')
+
+    # Add Breweries as the "Facilities"
+    print('Adding Breweries as the Facilities')
+    arcpy.na.AddLocations(
+        in_network_analysis_layer=closest_facility_lyr,
+        sub_layer='Facilities',
+        in_table=breweries_fc,
+        search_tolerance='100 Meters',  # NOTE: value determined after some trial-and-error
+        match_type='MATCH_TO_CLOSEST',
+        append='APPEND',
+        snap_to_position_along_network='SNAP',
+        snap_offset='0 Meters'
+    )
+
+    # Add Fourteeners as the "Incidents"
+    print('Adding Fourteeners as the Incidents')
+    arcpy.na.AddLocations(
+        in_network_analysis_layer=closest_facility_lyr,
+        sub_layer='Incidents',
+        in_table=peaks_fc,
+        search_tolerance='1500 Meters',  # NOTE: value determined after some trial-and-error
+        match_type='MATCH_TO_CLOSEST',
+        append='APPEND',
+        snap_to_position_along_network='SNAP',
+        snap_offset='0 Meters'
+    )
+
+    print('\n\nNow you need to make a manual property change to the Network Dataset that was just created.\n\n'
+          'Instructions:\n'
+          f'-Expand {gdb}\n'
+          '-Expand the "Colorado" feature dataset\n'
+          '-Right-click the Route_Network dataset that was just created\n'
+          '-Select Properties -> Source Settings -> Group Connectivity\n'
+          '-Change the policy for Route_Connectors from "Honor" to "Override".\n\n')
+    print('After making this change, uncomment the code below and run it to rebuild the Network to incorporate the change and solve.')
+
+    # print('Rebuilding Network...')
+    # arcpy.na.BuildNetwork(network)
+    # print('Network rebuilt!')
+    #
+    # print('Solving nearest 3 breweries to each fourteener')
+    # arcpy.na.Solve(closest_facility_lyr)
+    # print('Routes from each Fourteener to nearest 3 breweries created!')
+    # if arcpy.CheckExtension('Network') == 'Available':
+    #     arcpy.CheckInExtension('Network')
+    # endregion
 
 
 if __name__ == '__main__':
