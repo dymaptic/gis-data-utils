@@ -51,6 +51,8 @@ def main():
     # Note 2: we leverage DuckDB's SQL dialect to select only the columns we want, passing a boundary box to limit the
     #         results to Colorado, and we make use of DuckDB's read_parquet() method and the DuckDB spatial extension's
     #         ST_AsWKB method to read the WKB
+    # Docs for read_parquet() https://duckdb.org/docs/stable/data/parquet/overview#read_parquet-function
+    # Docs for ST_AsWKB() https://duckdb.org/docs/stable/core_extensions/spatial/functions#st_aswkb
     # Overture Maps regularly updates the data;
     # NOTE: GeoParquet is an immutable file type, meaning new GeoParquet files are created if there's a change
     release = '2025-05-21.0'
@@ -62,11 +64,7 @@ def main():
             elevation * 3.28084 > 14000 AS Is_Fourteener,
             ST_AsWKB(geometry) AS wkb
         FROM
-            read_parquet(
-                's3://overturemaps-us-west-2/release/{release}/theme=base/type=land/*',
-                filename=true, 
-                hive_partitioning=1
-            )
+            read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=base/type=land/*')
         WHERE 
             subtype = 'physical' AND class IN ('peak','volcano') AND elevation IS NOT NULL
             AND elevation * 3.28084 > 14000
@@ -118,11 +116,7 @@ def main():
                 phones[1] as PhoneNumber,
                 ST_AsWKB(geometry) AS wkb
             FROM
-                read_parquet(
-                    's3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*',
-                    filename=false,
-                    hive_partitioning=1
-                )
+                read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*')
             WHERE 
                 categories.primary = 'brewery'
                 AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
@@ -172,11 +166,7 @@ def main():
                 names.primary as SegmentType,                
                 ST_AsWKB(geometry) AS wkb
             FROM
-                read_parquet(
-                    's3://overturemaps-us-west-2/release/{release}/theme=transportation/type=segment/*',
-                    filename=false, 
-                    hive_partitioning=1
-                )
+                read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=transportation/type=segment/*')
             WHERE 
                 subtype = 'road'
                 AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
@@ -216,11 +206,7 @@ def main():
             SELECT
                 ST_AsWKB(geometry) AS wkb
             FROM
-                read_parquet(
-                    's3://overturemaps-us-west-2/release/{release}/theme=transportation/type=connector/*',
-                    filename=false, 
-                    hive_partitioning=1
-                )
+                read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=transportation/type=connector/*')
             WHERE 
                 bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
                 AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
