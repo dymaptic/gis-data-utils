@@ -10,8 +10,11 @@ Created: 5/27/2025
 ====================================================================================================================="""
 
 import os
-import duckdb
 from collections import namedtuple
+
+import arcpy.da
+import arcpy.management
+import duckdb
 
 
 def main():
@@ -227,7 +230,7 @@ def main():
         raw_row = duck_connectors.fetchone()
         i = 0
         while raw_row:
-            if i % 10_000 == 0:
+            if i % 25_000 == 0:
                 print(f'\t-Inserted {i:,} connectors...')
 
             # Cast the tuple to list since we need to modify it
@@ -294,25 +297,60 @@ def main():
         snap_offset='0 Meters'
     )
 
-    print('\n\nNow you need to make a manual property change to the Network Dataset that was just created.\n\n'
-          'Instructions:\n'
-          f'-Expand {gdb}\n'
-          '-Expand the "Colorado" feature dataset\n'
-          '-Right-click the Route_Network dataset that was just created\n'
-          '-Select Properties -> Source Settings -> Group Connectivity\n'
-          '-Change the policy for Route_Connectors from "Honor" to "Override".\n\n')
+    print('\n\nNow you need to make a manual property change to the Network Dataset that was just created.\n\n')
+    print('Instructions:')
+    print(f'-Expand {gdb}')
+    print('-Expand the "Colorado" feature dataset')
+    print('-Right-click the Route_Network dataset that was just created')
+    print('-Select Properties -> Source Settings -> Group Connectivity')
+    print('-Change the policy for Route_Connectors from "Honor" to "Override".\n')
     print('After making this change, uncomment the code below and run it to rebuild the Network to incorporate the change and solve.')
 
-    # print('Rebuilding Network...')
-    # arcpy.na.BuildNetwork(network)
-    # print('Network rebuilt!')
-    #
-    # print('Solving nearest 3 breweries to each fourteener')
-    # arcpy.na.Solve(closest_facility_lyr)
-    # print('Routes from each Fourteener to nearest 3 breweries created!')
-    # if arcpy.CheckExtension('Network') == 'Available':
-    #     arcpy.CheckInExtension('Network')
+    print('Rebuilding Network...')
+    arcpy.na.BuildNetwork(network)
+    print('Network rebuilt!')
+
+    print('Solving nearest 3 breweries to each fourteener')
+    arcpy.na.Solve(closest_facility_lyr)
+    print('Routes from each Fourteener to nearest 3 breweries created!')
+    if arcpy.CheckExtension('Network') == 'Available':
+        arcpy.CheckInExtension('Network')
+
+    # Summarize the results!
+    routes_lyr = [lyr for lyr in closest_facility_lyr.listLayers() if lyr.name == 'Routes'][0]
+    arcpy.management.AddField(in_table=routes_lyr, field_name='Distance_Miles', field_type='DOUBLE')
+    arcpy.management.CalculateField(
+        in_table=routes_lyr,
+        field='Distance_Miles',
+        expression='!shape.length@meters! * 0.000621371',
+        expression_type='PYTHON3'
+    )
+    summarize_results(routes_lyr)
     # endregion
+
+
+def summarize_results(routes_lyr):
+    """ Prints out the 3 nearest breweries for each fourteener. """
+
+    summary = {}
+    with arcpy.da.SearchCursor(routes_lyr, field_names=['FacilityRank', 'Name', 'Distance_Miles']) as sCursor:
+        for rank, name, mileage in sCursor:
+            # Split the 'Name' field into peak and brewery (format "Peak - Brewery")
+            peak, brewery = name.split(' - ')
+
+            # Initialize the peak entry if it doesn't exist
+            if peak not in summary:
+                summary[peak] = {}
+
+            mileage = round(mileage, 1)
+
+            # Store the brewery with its rank
+            summary[peak][rank] = f'{brewery} ({mileage} miles)'
+
+    for peak, ranked_breweries in summary.items():
+        print(peak)
+        for rank in sorted(ranked_breweries.keys()):
+            print(f'\t{rank}. {ranked_breweries[rank]}')
 
 
 if __name__ == '__main__':
