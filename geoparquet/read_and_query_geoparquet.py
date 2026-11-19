@@ -3,10 +3,11 @@ Name: read_and_query_geoparquet.py
 Purpose: Provides a hands-on example for the blog, "How to Read and Query GeoParquet in ArcGIS Pro with DuckDB".
 
 Requirements:
-    - DuckDB v1.1 which comes with ArcGIS Pro 3.5+ by default.
+    - DuckDB v1.3.2 which comes with ArcGIS Pro 3.7 by default.
 
 Author: Ed Conrad
 Created: 5/27/2025
+Updated: 11/19/2026
 ====================================================================================================================="""
 
 import os
@@ -45,6 +46,17 @@ def main():
     BoundingBox = namedtuple(typename='BoundingBox', field_names=['xmin', 'xmax', 'ymin', 'ymax'])
     colorado_bbox = BoundingBox(xmin=-109, xmax=-102, ymin=37, ymax=41)
 
+    # Determine the most recent release of data from Overture Maps
+    # Overture Maps is an open data initiative that provides geospatial data in GeoParquet format,
+    # which can be queried efficiently using DuckDB’s built-in Parquet and spatial extensions.
+    import requests
+
+    resp = requests.get("https://stac.overturemaps.org/catalog.json", timeout=30)
+    resp.raise_for_status()
+    release = resp.json()["latest"]
+    print(f"Using Overture release {release}")
+
+
     # region Get Colorado Fourteeners!
     # Overture Maps is an open data initiative that provides geospatial data in GeoParquet format,
     # which can be queried efficiently using DuckDB’s built-in Parquet and spatial extensions.
@@ -58,7 +70,6 @@ def main():
     # Docs for ST_AsWKB() https://duckdb.org/docs/stable/core_extensions/spatial/functions#st_aswkb
     # Overture Maps regularly updates the data;
     # NOTE: GeoParquet is an immutable file type, meaning new GeoParquet files are created if there's a change
-    release = '2025-05-21.0'
     sql = f"""
         SELECT
             names.primary AS name,
@@ -110,6 +121,11 @@ def main():
     # endregion
 
     # region Get Colorado Breweries!
+    # Dataset Schema: https://docs.overturemaps.org/schema/reference/places/place/
+    # NOTE: Overture replaced the 'categories' column with 'taxonomy' (and 'basic_category'), so we filter on
+    #       taxonomy.primary. We also skip places whose operating_status is 'permanently_closed'.
+    # NOTE: Overture contains some duplicate places. QUALIFY keeps one row per name + street address (the one with the
+    #       highest confidence), so breweries with multiple locations (different addresses) are all kept.
     sql = f"""
             SELECT
                 names.primary AS Name,
@@ -121,9 +137,14 @@ def main():
             FROM
                 read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*')
             WHERE 
-                categories.primary = 'brewery'
+                taxonomy.primary = 'brewery'
+                AND operating_status IS DISTINCT FROM 'permanently_closed'
                 AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
                 AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+            QUALIFY ROW_NUMBER() OVER (
+                PARTITION BY names.primary, addresses[1].freeform
+                ORDER BY confidence DESC, id
+            ) = 1
         """
 
     # Get DuckDB Query Relation object
@@ -141,7 +162,8 @@ def main():
     arcpy.management.AddField(in_table=breweries_fc, field_name='Zip', field_type='TEXT', field_length=10)
     arcpy.management.AddField(in_table=breweries_fc, field_name='Phone_Number', field_type='TEXT', field_length=12)
 
-    with arcpy.da.InsertCursor(breweries_fc, field_names=['Name', 'Address', 'City', 'Zip', 'Phone_Number', 'shape@']) as iCursor:
+    with arcpy.da.InsertCursor(breweries_fc,
+                               field_names=['Name', 'Address', 'City', 'Zip', 'Phone_Number', 'shape@']) as iCursor:
         # Get a single row as a tuple
         raw_row = duck_breweries.fetchone()
         i = 0
@@ -163,10 +185,10 @@ def main():
     # region Get Colorado Road Segments!
     # According to the docs, the definition for subtype of 'road':
     # "A road segment represents a section of any kind of road, street or path, including a dedicated path for walking or cycling, but excluding a railway."
-    # As of 5/28/25 the names.primary is returning segment type - which differs from the docs.
+    # The 'class' column holds the segment type (e.g. motorway, residential, footway); names.primary is the road name.
     sql = f"""
             SELECT
-                names.primary as SegmentType,                
+                class AS SegmentType,
                 ST_AsWKB(geometry) AS wkb
             FROM
                 read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=transportation/type=segment/*')
@@ -186,7 +208,7 @@ def main():
                                                    geometry_type='POLYLINE',
                                                    spatial_reference=wgs84).getOutput(0)
     arcpy.management.AddField(in_table=segments_fc, field_name='Segment_Type', field_type='TEXT', field_length=20)
-    with arcpy.da.InsertCursor(segments_fc, field_names=['shape@', 'Segment_Type']) as iCursor:
+    with arcpy.da.InsertCursor(segments_fc, field_names=['Segment_Type', 'shape@']) as iCursor:
         # Get a single row as a tuple
         raw_row = duck_segments.fetchone()
         i = 0
@@ -198,7 +220,7 @@ def main():
             row = list(raw_row)
 
             # Convert the Well-Known Binary (WKB) string to an Esri Geometry object
-            row[0] = arcpy.FromWKB(row[-1])
+            row[-1] = arcpy.FromWKB(row[-1])
             iCursor.insertRow(row)
             raw_row = duck_segments.fetchone()
             i += 1
@@ -304,7 +326,7 @@ def main():
     print('-Right-click the Route_Network dataset that was just created')
     print('-Select Properties -> Source Settings -> Group Connectivity')
     print('-Change the policy for Route_Connectors from "Honor" to "Override".\n')
-    print('After making this change, uncomment the code below and run it to rebuild the Network to incorporate the change and solve.')
+    input('After making this change, press Enter to rebuild the Network to incorporate the change and solve...')
 
     print('Rebuilding Network...')
     arcpy.na.BuildNetwork(network)
@@ -335,8 +357,9 @@ def summarize_results(routes_lyr):
     summary = {}
     with arcpy.da.SearchCursor(routes_lyr, field_names=['FacilityRank', 'Name', 'Distance_Miles']) as sCursor:
         for rank, name, mileage in sCursor:
-            # Split the 'Name' field into peak and brewery (format "Peak - Brewery")
-            peak, brewery = name.split(' - ')
+            # Split the 'Name' field into peak and brewery (format "Peak - Brewery").
+            # Split only on the first ' - ' because some brewery names contain ' - ' themselves.
+            peak, brewery = name.split(' - ', 1)
 
             # Initialize the peak entry if it doesn't exist
             if peak not in summary:
