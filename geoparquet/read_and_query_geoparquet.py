@@ -82,8 +82,8 @@ def main():
         WHERE 
             subtype = 'physical' AND class IN ('peak','volcano') AND elevation IS NOT NULL
             AND elevation * 3.28084 > 14000
-            AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
-            AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+            AND bbox.xmin <= {colorado_bbox.xmax} AND bbox.xmax >= {colorado_bbox.xmin}
+            AND bbox.ymin <= {colorado_bbox.ymax} AND bbox.ymax >= {colorado_bbox.ymin}
     """
 
     # Get DuckDB Query Relation object
@@ -124,8 +124,8 @@ def main():
     # Dataset Schema: https://docs.overturemaps.org/schema/reference/places/place/
     # NOTE: Overture replaced the 'categories' column with 'taxonomy' (and 'basic_category'), so we filter on
     #       taxonomy.primary. We also skip places whose operating_status is 'permanently_closed'.
-    # NOTE: Overture contains some duplicate places. QUALIFY keeps one row per name + street address (the one with the
-    #       highest confidence), so breweries with multiple locations (different addresses) are all kept.
+    # NOTE: Overture contains some duplicate places. QUALIFY keeps one row per name + street address + city (the one
+    #       with the highest confidence). Breweries with multiple locations are all kept, as are records missing a name or address.
     sql = f"""
             SELECT
                 names.primary AS Name,
@@ -139,10 +139,10 @@ def main():
             WHERE 
                 taxonomy.primary = 'brewery'
                 AND operating_status IS DISTINCT FROM 'permanently_closed'
-                AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
-                AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+                AND bbox.xmin <= {colorado_bbox.xmax} AND bbox.xmax >= {colorado_bbox.xmin}
+                AND bbox.ymin <= {colorado_bbox.ymax} AND bbox.ymax >= {colorado_bbox.ymin}
             QUALIFY ROW_NUMBER() OVER (
-                PARTITION BY names.primary, addresses[1].freeform
+                PARTITION BY COALESCE(names.primary, id), COALESCE(addresses[1].freeform, id), LOWER(addresses[1].locality)
                 ORDER BY confidence DESC, id
             ) = 1
         """
@@ -194,8 +194,8 @@ def main():
                 read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=transportation/type=segment/*')
             WHERE 
                 subtype = 'road'
-                AND bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
-                AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+                AND bbox.xmin <= {colorado_bbox.xmax} AND bbox.xmax >= {colorado_bbox.xmin}
+                AND bbox.ymin <= {colorado_bbox.ymax} AND bbox.ymax >= {colorado_bbox.ymin}
         """
 
     # Get DuckDB Query Relation object
@@ -233,8 +233,8 @@ def main():
             FROM
                 read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=transportation/type=connector/*')
             WHERE 
-                bbox.xmin BETWEEN {colorado_bbox.xmin} AND {colorado_bbox.xmax}
-                AND bbox.ymin BETWEEN {colorado_bbox.ymin} AND {colorado_bbox.ymax}
+                bbox.xmin <= {colorado_bbox.xmax} AND bbox.xmax >= {colorado_bbox.xmin}
+                AND bbox.ymin <= {colorado_bbox.ymax} AND bbox.ymax >= {colorado_bbox.ymin}
         """
 
     # Get DuckDB Query Relation object
@@ -327,6 +327,8 @@ def main():
     print('-Select Properties -> Source Settings -> Group Connectivity')
     print('-Change the policy for Route_Connectors from "Honor" to "Override".\n')
     input('After making this change, press Enter to rebuild the Network to incorporate the change and solve...')
+    while connector_policy(network) != 'Override':
+        input('Route_Connectors is still set to "Honor". Change it to "Override", then press Enter...')
 
     print('Rebuilding Network...')
     arcpy.na.BuildNetwork(network)
@@ -349,6 +351,15 @@ def main():
     )
     summarize_results(routes_lyr)
     # endregion
+
+
+def connector_policy(network):
+    """ Returns the group connectivity policy ('Honor' or 'Override') of the Route_Connectors junction source. """
+
+    for source in arcpy.Describe(network).junctionSources:
+        if source.name == 'Route_Connectors':
+            return source.connectivityPolicies.classConnectivity
+    raise ValueError(f'Route_Connectors is not a junction source of {network}')
 
 
 def summarize_results(routes_lyr):
